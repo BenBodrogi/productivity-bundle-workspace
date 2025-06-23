@@ -60,7 +60,23 @@
     </aside>
 
     <main class="video-area">
-      <video id="videoPreview" controls></video>
+      <video id="videoPreview" muted></video>
+      <div class="video-controls">
+        <button id="playPauseBtn">⏵ Play</button>
+        <button id="rewindBtn">⏪ 5s</button>
+        <button id="forwardBtn">⏩ 5s</button>
+        <span id="currentTime">0:00</span> / <span id="totalDuration">0:00</span>
+
+        <label style="margin-left: auto;">
+          Preview Resolution:
+          <select id="previewResolution">
+            <option value="original">Original</option>
+            <option value="1920x1080">1080p</option>
+            <option value="1280x720">720p</option>
+            <option value="854x480">480p</option>
+          </select>
+        </label>
+      </div>
       <div class="timeline-container">
         <div class="timeline-track">
           <div class="timeline-fill"></div>

@@ -25,6 +25,14 @@ const resolutionSelect = document.getElementById('resolutionSelect');
 const qualitySelect = document.getElementById('qualitySelect');
 const audioBitrateSelect = document.getElementById('audioBitrateSelect');
 
+// New custom controls elements
+const playPauseBtn = document.getElementById('playPauseBtn');
+const rewindBtn = document.getElementById('rewindBtn');
+const forwardBtn = document.getElementById('forwardBtn');
+const currentTimeDisplay = document.getElementById('currentTime');
+const totalDurationDisplay = document.getElementById('totalDuration');
+const previewResolution = document.getElementById('previewResolution');
+
 let videoFile;
 let isCancelled = false;
 
@@ -65,6 +73,8 @@ videoInput.addEventListener('change', () => {
     endTimeInput.value = duration;
     startTimeInput.value = 0;
     durationInfo.textContent = `Video Duration: ${duration} seconds`;
+    totalDurationDisplay.textContent = formatTime(duration);
+    currentTimeDisplay.textContent = formatTime(0);
   };
 });
 
@@ -196,3 +206,52 @@ exportBtn.addEventListener('click', async () => {
 
   resetUI();
 });
+
+// ========== CUSTOM VIDEO CONTROLS ==========
+
+videoPreview.addEventListener('loadedmetadata', () => {
+  totalDurationDisplay.textContent = formatTime(videoPreview.duration);
+  currentTimeDisplay.textContent = formatTime(0);
+});
+
+videoPreview.addEventListener('timeupdate', () => {
+  currentTimeDisplay.textContent = formatTime(videoPreview.currentTime);
+});
+
+playPauseBtn.addEventListener('click', () => {
+  if (videoPreview.paused) {
+    videoPreview.play();
+    playPauseBtn.textContent = '⏸ Pause';
+  } else {
+    videoPreview.pause();
+    playPauseBtn.textContent = '⏵ Play';
+  }
+});
+
+rewindBtn.addEventListener('click', () => {
+  videoPreview.currentTime = Math.max(videoPreview.currentTime - 5, 0);
+});
+
+forwardBtn.addEventListener('click', () => {
+  videoPreview.currentTime = Math.min(videoPreview.currentTime + 5, videoPreview.duration);
+});
+
+previewResolution.addEventListener('change', () => {
+  const value = previewResolution.value;
+
+  if (value === 'original') {
+    videoPreview.removeAttribute('width');
+    videoPreview.removeAttribute('height');
+  } else {
+    const [w, h] = value.split('x');
+    videoPreview.width = parseInt(w);
+    videoPreview.height = parseInt(h);
+  }
+});
+
+// Helper function to format seconds to M:SS
+function formatTime(sec) {
+  const minutes = Math.floor(sec / 60);
+  const seconds = Math.floor(sec % 60).toString().padStart(2, '0');
+  return `${minutes}:${seconds}`;
+}
