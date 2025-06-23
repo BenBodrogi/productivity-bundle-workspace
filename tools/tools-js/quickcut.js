@@ -1,4 +1,4 @@
-import { createFFmpeg, fetchFile } from '/libs/ffmpeg.min.js';
+import { createFFmpeg, fetchFile } from '../../libs/ffmpeg.min.js';
 
 const ffmpeg = createFFmpeg({
   log: true,
