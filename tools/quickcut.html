@@ -2,175 +2,33 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>QuickCut Debug</title>
-  <style>
-    body {
-      font-family: sans-serif;
-      background: #111;
-      color: #fff;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 2rem;
-    }
-    video {
-      max-width: 80%;
-      margin-bottom: 1rem;
-      background: #000;
-    }
-    input, label, button {
-      margin: 0.5rem 0;
-      display: block;
-    }
-    .controls {
-      max-width: 400px;
-      width: 100%;
-    }
-    #log {
-      margin-top: 1rem;
-      max-width: 80%;
-      background: #222;
-      padding: 1rem;
-      height: 200px;
-      overflow-y: auto;
-      white-space: pre-wrap;
-      font-family: monospace;
-      font-size: 0.9rem;
-      border: 1px solid #444;
-    }
-  </style>
+  <title>QuickClip - Phase 2</title>
+  <link rel="stylesheet" href="css/quickclip.css" />
 </head>
 <body>
-  <h1>🎬 QuickCut Debug</h1>
+  <section>
+    <h2>🎬 QuickClip</h2>
 
-  <input type="file" id="videoInput" accept="video/*" />
-  <video id="videoPreview" controls></video>
+    <input type="file" id="videoInput" accept="video/*" />
+    <video id="videoPreview" controls></video>
 
-  <div class="controls">
-    <label>Start Time (sec): <input type="number" id="startTime" min="0" value="0" /></label>
-    <label>End Time (sec): <input type="number" id="endTime" min="0" value="10" /></label>
-    <label><input type="checkbox" id="muteAudio" /> Mute Audio</label>
-    <button id="exportBtn">📤 Export to WebM</button>
-  </div>
+    <form id="controlsForm">
+      <label for="startTime">Start Time (sec):</label>
+      <input type="number" id="startTime" min="0" value="0" />
 
-  <div id="log"></div>
+      <label for="endTime">End Time (sec):</label>
+      <input type="number" id="endTime" min="0" value="10" />
+
+      <label>
+        <input type="checkbox" id="muteAudio" />
+        Mute Audio
+      </label>
+
+      <button type="submit" id="exportBtn">📤 Export to WebM</button>
+    </form>
+  </section>
 
   <script src="/libs/ffmpeg.min.js"></script>
-  <script>
-    const { createFFmpeg, fetchFile } = FFmpeg;
-    const logElem = document.getElementById("log");
-
-    // Helper function to log messages
-    function log(msg) {
-      console.log(msg);
-      logElem.textContent += msg + "\n";
-      logElem.scrollTop = logElem.scrollHeight;
-    }
-
-    // Increase memory size if you want, currently 1GB
-    const ffmpeg = createFFmpeg({
-      log: true,
-      corePath: '/libs/ffmpeg-core.js',
-      wasmPath: '/libs/ffmpeg-core.wasm',
-      memorySize: 4 * 1024 * 1024 * 1024, // 1 GB - you can try larger if needed
-    });
-
-    const videoInput = document.getElementById("videoInput");
-    const videoPreview = document.getElementById("videoPreview");
-    const exportBtn = document.getElementById("exportBtn");
-
-    let videoFile;
-
-    videoInput.addEventListener("change", () => {
-      const file = videoInput.files[0];
-      if (file) {
-        videoFile = file;
-        log(`Selected file: ${file.name}`);
-        log(`File size: ${(file.size / (1024*1024)).toFixed(2)} MB`);
-        videoPreview.src = URL.createObjectURL(file);
-        videoPreview.onloadedmetadata = () => {
-          log(`Video duration: ${videoPreview.duration.toFixed(2)} sec`);
-          document.getElementById("endTime").value = Math.floor(videoPreview.duration);
-        };
-      }
-    });
-
-    exportBtn.addEventListener("click", async () => {
-      if (!videoFile) {
-        alert("Please upload a video first!");
-        return;
-      }
-
-      const start = parseFloat(document.getElementById("startTime").value);
-      const end = parseFloat(document.getElementById("endTime").value);
-      const mute = document.getElementById("muteAudio").checked;
-
-      if (start >= end) {
-        alert("Start time must be less than end time.");
-        return;
-      }
-
-      exportBtn.disabled = true;
-      exportBtn.textContent = "Processing...";
-      log("Starting ffmpeg process...");
-
-      try {
-        if (!ffmpeg.isLoaded()) {
-          log("Loading ffmpeg core...");
-          await ffmpeg.load();
-          log("ffmpeg core loaded.");
-        }
-
-        log("Writing input file to FS...");
-        ffmpeg.FS("writeFile", "input.mp4", await fetchFile(videoFile));
-
-        const duration = end - start;
-        log(`Trimming from ${start}s to ${end}s (duration ${duration}s)`);
-        log(`Mute audio: ${mute}`);
-
-        // Simplified command to isolate issues:
-        const args = [
-          "-ss", `${start}`,
-          "-t", `${duration}`,
-          "-i", "input.mp4",
-          ...(mute ? ["-an"] : []),
-          "-c:v", "libx264",
-          "-preset", "fast",
-          "-crf", "23",
-          ...(mute ? [] : ["-c:a", "libmp3lame"]),  // fallback to mp3 audio
-          "output.mp4"
-        ];
-
-
-        log("Running ffmpeg with args:");
-        log(args.join(" "));
-
-        await ffmpeg.run(...args);
-
-        log("ffmpeg run completed successfully.");
-
-        const data = ffmpeg.FS("readFile", "output.mp4");
-        const url = URL.createObjectURL(new Blob([data.buffer], { type: "video/mp4" }));
-
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = "quickcut_output.webm";
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-
-        URL.revokeObjectURL(url);
-
-        log("Download triggered.");
-      } catch (e) {
-        log("ERROR during ffmpeg process:");
-        log(e.message || e);
-        alert("Error during video processing: " + (e.message || e));
-      }
-
-      exportBtn.disabled = false;
-      exportBtn.textContent = "📤 Export to WebM";
-    });
-  </script>
+  <script src="js/quickclip.js"></script>
 </body>
 </html>
