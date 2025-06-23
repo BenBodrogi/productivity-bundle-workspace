@@ -1,5 +1,5 @@
 // quickcut.js
-import { processExport, cancelProcessing } from 'ffmpeg-logic.js';
+import { processExport, cancelProcessing } from './ffmpeg-logic.js';
 
 const videoInput = document.getElementById('videoInput');
 const videoPreview = document.getElementById('videoPreview');
