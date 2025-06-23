@@ -4,7 +4,14 @@ const ffmpeg = createFFmpeg({
   log: true,
   corePath: '../../libs/ffmpeg-core.js',
   wasmPath: '../../libs/ffmpeg-core.wasm',
-  memorySize: 2 * 1024 * 1024 * 1024, // 2GB memory
+  memorySize: 2 * 1024 * 1024 * 1024,
+  logger: ({ type, message }) => {
+    const logElem = document.getElementById('log');
+    if (logElem) {
+      logElem.textContent += `[${type}] ${message}\n`;
+      logElem.scrollTop = logElem.scrollHeight;
+    }
+  },
 });
 
 const videoInput = document.getElementById('videoInput');
@@ -48,11 +55,12 @@ exportBtn.addEventListener('click', async () => {
   exportBtn.disabled = true;
   exportBtn.textContent = 'Processing...';
 
+  const logElem = document.getElementById('log');
+  if (logElem) logElem.textContent = '';
+
   try {
     if (!ffmpeg.isLoaded()) {
-      console.log('Loading ffmpeg core...');
       await ffmpeg.load();
-      console.log('ffmpeg core loaded.');
     }
 
     ffmpeg.FS('writeFile', 'input.mp4', await fetchFile(videoFile));
@@ -63,15 +71,13 @@ exportBtn.addEventListener('click', async () => {
       '-t', `${duration}`,
       '-i', 'input.mp4',
       '-c:v', 'libx264',
-      '-preset', 'fast',
+      '-preset', 'ultrafast',
       '-crf', '23',
       ...(mute ? ['-an'] : ['-c:a', 'aac']),
       'output.mp4',
     ];
 
-    console.log('Running ffmpeg with args:', args.join(' '));
     await ffmpeg.run(...args);
-    console.log('ffmpeg processing finished.');
 
     const data = ffmpeg.FS('readFile', 'output.mp4');
     const url = URL.createObjectURL(new Blob([data.buffer], { type: 'video/mp4' }));
