@@ -12,9 +12,12 @@ let ffmpeg = createFFmpeg({
 
 const videoInput = document.getElementById('videoInput');
 const videoPreview = document.getElementById('videoPreview');
+
 const startTimeInput = document.getElementById('startTime');
 const endTimeInput = document.getElementById('endTime');
+
 const muteAudioCheckbox = document.getElementById('muteAudio');
+const audioBitrateSelect = document.getElementById('audioBitrateSelect');
 const exportBtn = document.getElementById('exportBtn');
 const cancelBtn = document.getElementById('cancelBtn');
 const progressBar = document.getElementById('progressBar');
@@ -23,16 +26,18 @@ const durationInfo = document.getElementById('durationInfo');
 
 const resolutionSelect = document.getElementById('resolutionSelect');
 const qualitySelect = document.getElementById('qualitySelect');
-const audioBitrateSelect = document.getElementById('audioBitrateSelect');
 
-// Custom controls
 const playPauseBtn = document.getElementById('playPauseBtn');
 const rewindBtn = document.getElementById('rewindBtn');
 const forwardBtn = document.getElementById('forwardBtn');
 const muteToggleBtn = document.getElementById('muteToggleBtn');
+const volumeSlider = document.getElementById('volumeSlider');
+
 const currentTimeDisplay = document.getElementById('currentTime');
 const totalDurationDisplay = document.getElementById('totalDuration');
+
 const previewResolution = document.getElementById('previewResolution');
+const videoProgress = document.getElementById('videoProgress');
 
 const timelineTrack = document.querySelector('.timeline-track');
 const timelineFill = document.querySelector('.timeline-fill');
@@ -44,15 +49,45 @@ let isCancelled = false;
 let duration = 0;
 let isDraggingStart = false;
 let isDraggingEnd = false;
+let isDraggingVideoProgress = false;
 
-// ----------- Helper functions -----------
+// ---------------------------------
+// Time helpers mm:ss <-> seconds
+function formatTime(sec) {
+  if (isNaN(sec) || sec < 0) return '0:00';
+  const m = Math.floor(sec / 60);
+  const s = Math.floor(sec % 60);
+  return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
+function parseTime(str) {
+  // expects "mm:ss"
+  const parts = str.split(':');
+  if (parts.length !== 2) return NaN;
+  const m = parseInt(parts[0], 10);
+  const s = parseInt(parts[1], 10);
+  if (isNaN(m) || isNaN(s) || s >= 60 || m < 0 || s < 0) return NaN;
+  return m * 60 + s;
+}
+
+function clamp(value, min, max) {
+  return Math.min(max, Math.max(min, value));
+}
+
+function timeToPercent(time) {
+  return (time / duration) * 100;
+}
+
+function percentToTime(percent) {
+  return (percent / 100) * duration;
+}
 
 function resetUI() {
   progressBar.style.display = 'none';
   progressText.style.display = 'none';
   exportBtn.disabled = false;
   cancelBtn.disabled = true;
-  exportBtn.textContent = '📤 Export to MP4';
+  exportBtn.textContent = '📤 Export';
   isCancelled = false;
 }
 
@@ -68,42 +103,9 @@ function recreateFFmpeg() {
   });
 }
 
-function formatTime(sec) {
-  const minutes = Math.floor(sec / 60);
-  const seconds = Math.floor(sec % 60).toString().padStart(2, '0');
-  return `${minutes}:${seconds}`;
-}
+// ---------------------------------
+// Video loading
 
-function updateTimeDisplays() {
-  currentTimeDisplay.textContent = formatTime(videoPreview.currentTime);
-  totalDurationDisplay.textContent = formatTime(duration);
-}
-
-function timeToPercent(time) {
-  return (time / duration) * 100;
-}
-
-function percentToTime(percent) {
-  return (percent / 100) * duration;
-}
-
-function updateTimelineUI() {
-  const startPercent = timeToPercent(parseFloat(startTimeInput.value));
-  const endPercent = timeToPercent(parseFloat(endTimeInput.value));
-
-  const clampedStart = Math.min(startPercent, endPercent);
-  const clampedEnd = Math.max(startPercent, endPercent);
-
-  timelineFill.style.left = `${clampedStart}%`;
-  timelineFill.style.width = `${clampedEnd - clampedStart}%`;
-
-  handleStart.style.left = `${clampedStart}%`;
-  handleEnd.style.left = `${clampedEnd}%`;
-}
-
-// ----------- Event Listeners -----------
-
-// Video load
 videoInput.addEventListener('change', () => {
   const file = videoInput.files[0];
   if (!file) return;
@@ -114,21 +116,21 @@ videoInput.addEventListener('change', () => {
 
   videoPreview.onloadedmetadata = () => {
     duration = videoPreview.duration;
-    endTimeInput.value = duration.toFixed(2);
-    startTimeInput.value = 0;
-    durationInfo.textContent = `Video Duration: ${Math.floor(duration)} seconds`;
+    startTimeInput.value = '0:00';
+    endTimeInput.value = formatTime(duration);
+    videoProgress.max = duration;
+    videoProgress.value = 0;
+
+    durationInfo.textContent = `Video Duration: ${formatTime(duration)}`;
     totalDurationDisplay.textContent = formatTime(duration);
     currentTimeDisplay.textContent = formatTime(0);
     updateTimelineUI();
   };
 });
 
-// Mute toggle disables audio bitrate checkbox
-muteAudioCheckbox.addEventListener('change', () => {
-  audioBitrateSelect.disabled = muteAudioCheckbox.checked;
-});
+// ---------------------------------
+// Export button and cancel logic
 
-// Cancel
 cancelBtn.addEventListener('click', async () => {
   if (isCancelled) return;
   isCancelled = true;
@@ -152,24 +154,24 @@ cancelBtn.addEventListener('click', async () => {
   resetUI();
 });
 
-// Export
 exportBtn.addEventListener('click', async () => {
   if (!videoFile) {
     alert('Please upload a video first!');
     return;
   }
 
-  const start = parseFloat(startTimeInput.value);
-  const end = parseFloat(endTimeInput.value);
-  const mute = muteAudioCheckbox.checked;
+  const start = parseTime(startTimeInput.value);
+  const end = parseTime(endTimeInput.value);
+
+  if (isNaN(start) || isNaN(end) || start >= end || end > duration) {
+    alert('Please enter valid start and end times (start < end and within video length).');
+    return;
+  }
+
+  const mute = muteAudioCheckbox.checked || volumeSlider.value == 0;
   const resolution = resolutionSelect.value;
   const quality = qualitySelect.value;
   const audioBitrate = audioBitrateSelect.value;
-
-  if (isNaN(start) || isNaN(end) || start >= end) {
-    alert('Please enter valid start and end times (start < end).');
-    return;
-  }
 
   isCancelled = false;
   exportBtn.disabled = true;
@@ -221,7 +223,6 @@ exportBtn.addEventListener('click', async () => {
     await ffmpeg.run(...args);
 
     if (isCancelled) {
-      console.log('Cancelled during processing');
       resetUI();
       return;
     }
@@ -241,9 +242,7 @@ exportBtn.addEventListener('click', async () => {
     URL.revokeObjectURL(url);
 
   } catch (e) {
-    if (isCancelled) {
-      console.log('Process aborted.');
-    } else {
+    if (!isCancelled) {
       console.error('Error during export:', e);
       alert('Error during export: ' + e.message);
     }
@@ -252,161 +251,215 @@ exportBtn.addEventListener('click', async () => {
   resetUI();
 });
 
-// ----------- CUSTOM VIDEO CONTROLS -----------
-
-videoPreview.addEventListener('loadedmetadata', () => {
-  duration = videoPreview.duration;
-  totalDurationDisplay.textContent = formatTime(duration);
-  currentTimeDisplay.textContent = formatTime(0);
-  updateTimelineUI();
-  updateMuteButtonIcon();
-});
-
-videoPreview.addEventListener('timeupdate', () => {
-  currentTimeDisplay.textContent = formatTime(videoPreview.currentTime);
-});
+// ---------------------------------
+// Play/Pause button toggle
 
 playPauseBtn.addEventListener('click', () => {
   if (videoPreview.paused) {
     videoPreview.play();
-    playPauseBtn.textContent = '⏸';
+    playPauseBtn.textContent = '⏸️';
   } else {
     videoPreview.pause();
     playPauseBtn.textContent = '▶️';
   }
 });
 
-rewindBtn.addEventListener('click', () => {
-  videoPreview.currentTime = Math.max(videoPreview.currentTime - 5, 0);
+// ---------------------------------
+// Mute checkbox & volume slider sync
+
+function updateAudioState() {
+  if (muteAudioCheckbox.checked || volumeSlider.value == 0) {
+    videoPreview.muted = true;
+    audioBitrateSelect.disabled = true;
+    muteToggleBtn.textContent = '🔇';
+  } else {
+    videoPreview.muted = false;
+    audioBitrateSelect.disabled = false;
+    muteToggleBtn.textContent = '🔈';
+  }
+}
+
+muteAudioCheckbox.addEventListener('change', () => {
+  if (muteAudioCheckbox.checked) {
+    volumeSlider.value = 0;
+  } else if (volumeSlider.value == 0) {
+    volumeSlider.value = 1;
+  }
+  updateAudioState();
+  videoPreview.volume = volumeSlider.value;
 });
 
-forwardBtn.addEventListener('click', () => {
-  videoPreview.currentTime = Math.min(videoPreview.currentTime + 5, videoPreview.duration);
+volumeSlider.addEventListener('input', () => {
+  if (volumeSlider.value == 0) {
+    muteAudioCheckbox.checked = true;
+  } else {
+    muteAudioCheckbox.checked = false;
+  }
+  updateAudioState();
+  videoPreview.volume = volumeSlider.value;
 });
 
 muteToggleBtn.addEventListener('click', () => {
-  videoPreview.muted = !videoPreview.muted;
-  updateMuteButtonIcon();
+  muteAudioCheckbox.checked = !muteAudioCheckbox.checked;
+  muteAudioCheckbox.dispatchEvent(new Event('change'));
 });
 
-function updateMuteButtonIcon() {
-  muteToggleBtn.textContent = videoPreview.muted ? '🔇' : '🔈';
+// ---------------------------------
+// Video time update and progress slider sync
+
+videoPreview.addEventListener('timeupdate', () => {
+  if (!isDraggingVideoProgress) {
+    currentTimeDisplay.textContent = formatTime(videoPreview.currentTime);
+    videoProgress.value = videoPreview.currentTime;
+  }
+});
+
+videoProgress.addEventListener('input', () => {
+  isDraggingVideoProgress = true;
+  currentTimeDisplay.textContent = formatTime(videoProgress.value);
+});
+
+videoProgress.addEventListener('change', () => {
+  videoPreview.currentTime = videoProgress.value;
+  isDraggingVideoProgress = false;
+});
+
+// ---------------------------------
+// Preview resolution change - (Example: could blur or switch resolution in real usage)
+// Just updating video CSS filter for demo
+
+previewResolution.addEventListener('change', () => {
+  const val = previewResolution.value;
+  if (val === 'original') {
+    videoPreview.style.filter = 'none';
+  } else {
+    videoPreview.style.filter = 'blur(1.5px)';
+  }
+});
+
+// ---------------------------------
+// Timeline slider drag and input sync
+
+function updateTimelineUI() {
+  const startSec = clamp(parseTime(startTimeInput.value), 0, duration);
+  const endSec = clamp(parseTime(endTimeInput.value), 0, duration);
+
+  const startPercent = timeToPercent(startSec);
+  const endPercent = timeToPercent(endSec);
+
+  timelineFill.style.left = `${startPercent}%`;
+  timelineFill.style.width = `${endPercent - startPercent}%`;
+
+  handleStart.style.left = `${startPercent}%`;
+  handleEnd.style.left = `${endPercent}%`;
+
+  // Clamp inputs
+  if (startSec >= endSec) {
+    startTimeInput.style.borderColor = 'red';
+    endTimeInput.style.borderColor = 'red';
+  } else {
+    startTimeInput.style.borderColor = '';
+    endTimeInput.style.borderColor = '';
+  }
 }
 
-// Preview resolution changes video playback quality without resizing container
-previewResolution.addEventListener('change', () => {
-  const value = previewResolution.value;
-
-  if (value === 'original') {
-    videoPreview.style.width = '640px';
-    videoPreview.style.height = '360px';
-  } else {
-    // We don't actually resize video element container — only playback quality is simulated by CSS filter here.
-    // Because real resolution change requires video source replacement which is complex, so we fake it:
-    videoPreview.style.width = '640px';
-    videoPreview.style.height = '360px';
-
-    // Simulate lower resolution with CSS filter blur + scale down, optional, comment if undesired:
-    switch (value) {
-      case '1920x1080': // 1080p, no blur
-        videoPreview.style.filter = 'none';
-        break;
-      case '1280x720': // 720p, slight blur
-        videoPreview.style.filter = 'blur(0.8px)';
-        break;
-      case '854x480': // 480p, more blur
-        videoPreview.style.filter = 'blur(1.5px)';
-        break;
-      default:
-        videoPreview.style.filter = 'none';
-    }
-  }
-});
-
-// ----------- TIMELINE DRAGGING -----------
-
-function setupHandleDragging() {
-  function onDragStart(e) {
-    if (e.target === handleStart) isDraggingStart = true;
-    if (e.target === handleEnd) isDraggingEnd = true;
-  }
-
-  function onDragEnd() {
-    isDraggingStart = false;
-    isDraggingEnd = false;
-  }
-
-  function onDragMove(e) {
-    if (!isDraggingStart && !isDraggingEnd) return;
-
-    const rect = timelineTrack.getBoundingClientRect();
-    let x = e.clientX;
-    if (e.touches) x = e.touches[0].clientX;
-
-    let percent = ((x - rect.left) / rect.width) * 100;
-    percent = Math.min(100, Math.max(0, percent));
-
-    const time = percentToTime(percent);
-
-    if (isDraggingStart) {
-      const endVal = parseFloat(endTimeInput.value);
-      if (time >= endVal) return;
-      startTimeInput.value = time.toFixed(2);
-    } else if (isDraggingEnd) {
-      const startVal = parseFloat(startTimeInput.value);
-      if (time <= startVal) return;
-      endTimeInput.value = time.toFixed(2);
-    }
-
+startTimeInput.addEventListener('input', () => {
+  if (parseTime(startTimeInput.value) !== NaN) {
     updateTimelineUI();
   }
-
-  handleStart.addEventListener('dragstart', onDragStart);
-  handleEnd.addEventListener('dragstart', onDragStart);
-
-  window.addEventListener('dragend', onDragEnd);
-  window.addEventListener('dragcancel', onDragEnd);
-
-  window.addEventListener('dragover', e => {
-    e.preventDefault();
-    onDragMove(e);
-  });
-
-  // Touch support
-  handleStart.addEventListener('touchstart', onDragStart);
-  handleEnd.addEventListener('touchstart', onDragStart);
-
-  window.addEventListener('touchend', onDragEnd);
-  window.addEventListener('touchcancel', onDragEnd);
-
-  window.addEventListener('touchmove', e => {
-    e.preventDefault();
-    onDragMove(e.touches[0]);
-  }, { passive: false });
-}
-
-// Sync timeline handles and inputs on manual input changes
-startTimeInput.addEventListener('input', () => {
-  let startVal = parseFloat(startTimeInput.value);
-  let endVal = parseFloat(endTimeInput.value);
-
-  if (startVal < 0) startVal = 0;
-  if (startVal >= endVal) startVal = endVal - 0.1;
-
-  startTimeInput.value = startVal.toFixed(2);
-  updateTimelineUI();
 });
 
 endTimeInput.addEventListener('input', () => {
-  let startVal = parseFloat(startTimeInput.value);
-  let endVal = parseFloat(endTimeInput.value);
-
-  if (endVal > duration) endVal = duration;
-  if (endVal <= startVal) endVal = startVal + 0.1;
-
-  endTimeInput.value = endVal.toFixed(2);
-  updateTimelineUI();
+  if (parseTime(endTimeInput.value) !== NaN) {
+    updateTimelineUI();
+  }
 });
 
-// Initialize timeline dragging on page load
-setupHandleDragging();
+function onHandleDrag(e, handle) {
+  e.preventDefault();
+
+  const rect = timelineTrack.getBoundingClientRect();
+  let clientX = e.clientX !== undefined ? e.clientX : e.touches[0].clientX;
+
+  let percent = ((clientX - rect.left) / rect.width) * 100;
+  percent = clamp(percent, 0, 100);
+
+  if (handle === handleStart) {
+    // Prevent crossing over end
+    const endPercent = parseFloat(handleEnd.style.left);
+    if (percent > endPercent) percent = endPercent;
+    handle.style.left = percent + '%';
+
+    const newStartTime = percentToTime(percent);
+    startTimeInput.value = formatTime(newStartTime);
+  } else if (handle === handleEnd) {
+    // Prevent crossing over start
+    const startPercent = parseFloat(handleStart.style.left);
+    if (percent < startPercent) percent = startPercent;
+    handle.style.left = percent + '%';
+
+    const newEndTime = percentToTime(percent);
+    endTimeInput.value = formatTime(newEndTime);
+  }
+  updateTimelineUI();
+}
+
+handleStart.addEventListener('mousedown', e => {
+  isDraggingStart = true;
+  document.body.style.userSelect = 'none';
+});
+
+handleEnd.addEventListener('mousedown', e => {
+  isDraggingEnd = true;
+  document.body.style.userSelect = 'none';
+});
+
+document.addEventListener('mouseup', e => {
+  if (isDraggingStart || isDraggingEnd) {
+    isDraggingStart = false;
+    isDraggingEnd = false;
+    document.body.style.userSelect = '';
+  }
+});
+
+document.addEventListener('mousemove', e => {
+  if (isDraggingStart) onHandleDrag(e, handleStart);
+  if (isDraggingEnd) onHandleDrag(e, handleEnd);
+});
+
+// Touch events for mobile
+
+handleStart.addEventListener('touchstart', e => {
+  isDraggingStart = true;
+  document.body.style.userSelect = 'none';
+});
+handleEnd.addEventListener('touchstart', e => {
+  isDraggingEnd = true;
+  document.body.style.userSelect = 'none';
+});
+document.addEventListener('touchend', e => {
+  isDraggingStart = false;
+  isDraggingEnd = false;
+  document.body.style.userSelect = '';
+});
+document.addEventListener('touchmove', e => {
+  if (isDraggingStart) onHandleDrag(e, handleStart);
+  if (isDraggingEnd) onHandleDrag(e, handleEnd);
+});
+
+// ---------------------------------
+// Skip/Rewind buttons logic (+/- 5 seconds)
+
+rewindBtn.addEventListener('click', () => {
+  videoPreview.currentTime = Math.max(0, videoPreview.currentTime - 5);
+});
+
+forwardBtn.addEventListener('click', () => {
+  videoPreview.currentTime = Math.min(duration, videoPreview.currentTime + 5);
+});
+
+// ---------------------------------
+// Initial state
+
+updateAudioState();
+updateTimelineUI();

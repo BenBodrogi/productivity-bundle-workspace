@@ -38,7 +38,7 @@
           </select>
 
           <label for="audioBitrateSelect">Audio Bitrate:</label>
-          <select id="audioBitrateSelect" disabled>
+          <select id="audioBitrateSelect">
             <option value="64000">64 kbps</option>
             <option value="96000">96 kbps</option>
             <option value="128000" selected>128 kbps</option>
@@ -66,10 +66,12 @@
         </div>
 
         <div class="video-controls">
-          <button id="rewindBtn" title="Rewind 5 seconds">⏪</button>
+          <button id="rewindBtn" title="Rewind 5 seconds" aria-label="Rewind 5 seconds"></button>
           <button id="playPauseBtn" title="Play/Pause">▶️</button>
-          <button id="forwardBtn" title="Forward 5 seconds">⏩</button>
+          <button id="forwardBtn" title="Forward 5 seconds" aria-label="Forward 5 seconds"></button>
           <button id="muteToggleBtn" title="Mute/Unmute">🔈</button>
+
+          <input type="range" id="volumeSlider" min="0" max="1" step="0.01" value="1" title="Volume" />
 
           <span id="currentTime">0:00</span> / <span id="totalDuration">0:00</span>
 
@@ -83,6 +85,9 @@
             </select>
           </label>
         </div>
+
+        <!-- video progress slider -->
+        <input type="range" id="videoProgress" min="0" max="100" step="0.1" value="0" title="Video progress" />
       </main>
     </div>
 
@@ -94,10 +99,12 @@
       </div>
 
       <div class="timeline-bar">
-        <label>Start (sec): <input type="number" id="startTime" min="0" value="0" step="0.1" /></label>
-        <label>End (sec): <input type="number" id="endTime" min="0" value="10" step="0.1" /></label>
+        <label>Start (mm:ss): <input type="text" id="startTime" value="0:00" pattern="^\d+:\d{2}$" /></label>
+        <label>End (mm:ss): <input type="text" id="endTime" value="0:10" pattern="^\d+:\d{2}$" /></label>
       </div>
     </div>
   </div>
+
+  <script type="module" src="tools-js/quickcut.js"></script>
 </body>
 </html>

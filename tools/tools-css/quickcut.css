@@ -78,8 +78,52 @@ body, html {
   width: 640px;
   user-select: none;
   flex-shrink: 0;
+  overflow: visible;
 }
 
+/* Volume slider: aligned right in controls */
+#volumeSlider {
+  width: 100px;
+  margin-left: auto;  /* push to right */
+  cursor: pointer;
+  vertical-align: middle;
+}
+
+/* video progress slider below controls */
+#videoProgress {
+  width: 640px;
+  margin-top: 10px;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  background: #555;
+  border-radius: 3px;
+  outline: none;
+}
+
+/* Video progress slider thumbs */
+#videoProgress::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  background: #7b5deb;
+  border-radius: 50%;
+  cursor: pointer;
+  margin-top: -4px;
+  border: 2px solid #fff;
+}
+#videoProgress::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  background: #7b5deb;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid #fff;
+}
+
+/* Buttons in video-controls */
 .video-controls button {
   background: #222;
   border: none;
@@ -96,6 +140,7 @@ body, html {
   background: #444;
 }
 
+/* Preview resolution select */
 .video-controls select {
   padding: 6px 10px;
   background: #111;
@@ -104,9 +149,11 @@ body, html {
   color: #fff;
 }
 
+/* Push preview resolution label to right side */
 .preview-resolution-label {
-  margin-left: auto;
+  margin-left: 10px;
   font-size: 14px;
+  white-space: nowrap;
 }
 
 /* timeline container (bottom half) */
@@ -139,14 +186,14 @@ body, html {
   background: #7b5deb;
   border-radius: 5px;
   pointer-events: none;
-  transition: left 0.1s, width 0.1s;
+  transition: left 0.1s ease, width 0.1s ease;
 }
 
 .handle {
   position: absolute;
   top: -6px;
-  width: 16px;
-  height: 22px;
+  width: 20px; /* increased size for easier grabbing */
+  height: 28px; /* increased height */
   background: #fff;
   border-radius: 3px;
   cursor: ew-resize;
@@ -159,6 +206,7 @@ body, html {
 .handle:hover,
 .handle:focus {
   background-color: #7b5deb;
+  outline: none;
 }
 
 .handle:active {
@@ -214,4 +262,82 @@ progress {
   font-size: 14px;
   display: none;
   text-align: center;
+}
+
+/* Skip/Rewind buttons with "5" in the middle */
+#rewindBtn,
+#forwardBtn {
+  width: 36px;
+  height: 36px;
+  background: #222;
+  border: none;
+  border-radius: 5px;
+  position: relative;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.2s ease;
+}
+
+#rewindBtn:hover,
+#forwardBtn:hover {
+  background: #444;
+}
+
+/* Rewind icon arrow */
+#rewindBtn::before {
+  content: '';
+  position: absolute;
+  left: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  border-style: solid;
+  border-width: 9px 14px 9px 0;
+  border-color: transparent #7b5deb transparent transparent;
+}
+#rewindBtn::after {
+  content: '5';
+  position: absolute;
+  left: 18px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 18px;
+  font-weight: bold;
+  color: #7b5deb;
+  user-select: none;
+}
+
+/* Forward icon arrow */
+#forwardBtn::before {
+  content: '';
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  border-style: solid;
+  border-width: 9px 0 9px 14px;
+  border-color: transparent transparent transparent #7b5deb;
+}
+#forwardBtn::after {
+  content: '5';
+  position: absolute;
+  right: 18px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 18px;
+  font-weight: bold;
+  color: #7b5deb;
+  user-select: none;
+}
+
+/* Make sliders have pointer cursor */
+input[type="range"] {
+  cursor: pointer;
+}
+
+/* Accessibility: focus outlines */
+button:focus,
+input[type="range"]:focus,
+select:focus {
+  outline: 2px solid #7b5deb;
+  outline-offset: 2px;
 }
