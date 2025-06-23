@@ -1,6 +1,6 @@
 const { createFFmpeg, fetchFile } = FFmpeg;
 
-const ffmpeg = createFFmpeg({
+let ffmpeg = createFFmpeg({
   log: true,
   corePath: '../../libs/ffmpeg-core.js',
   wasmPath: '../../libs/ffmpeg-core.wasm',
@@ -54,6 +54,19 @@ cancelBtn.addEventListener('click', () => {
     progressText.textContent = 'Cancelling... Please wait.';
     exportBtn.disabled = false;
     cancelBtn.disabled = true;
+
+    // Recreate ffmpeg to abort running process safely
+    ffmpeg.exit().then(() => {
+      ffmpeg = createFFmpeg({
+        log: true,
+        corePath: '../../libs/ffmpeg-core.js',
+        wasmPath: '../../libs/ffmpeg-core.wasm',
+        memorySize: 2 * 1024 * 1024 * 1024,
+        logger: ({ type, message }) => {
+          console.log(`[${type}] ${message}`);
+        },
+      });
+    });
   }
 });
 
@@ -123,8 +136,8 @@ exportBtn.addEventListener('click', async () => {
 
     ffmpeg.setProgress(({ ratio }) => {
       if (isCancelled) {
-        // Terminate ffmpeg safely:
-        ffmpeg.exit();
+        // Ideally the process should be stopped by ffmpeg.exit() on cancel click,
+        // but if it runs, we prevent UI updates:
         return;
       }
       const percent = Math.round(ratio * 100);
