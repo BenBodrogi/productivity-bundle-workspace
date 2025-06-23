@@ -39,6 +39,7 @@ videoInput.addEventListener('change', () => {
   };
 });
 
+// Disable audio bitrate selector if muted
 muteAudioCheckbox.addEventListener('change', () => {
   audioBitrateSelect.disabled = muteAudioCheckbox.checked;
 });
@@ -53,7 +54,7 @@ exportBtn.addEventListener('click', async () => {
   const end = parseFloat(endTimeInput.value);
   const mute = muteAudioCheckbox.checked;
   const resolution = resolutionSelect.value;
-  const quality = qualitySelect.value; // format: "preset-crf"
+  const [preset, crf] = qualitySelect.value.split('-');
   const audioBitrate = audioBitrateSelect.value;
 
   if (isNaN(start) || isNaN(end) || start >= end) {
@@ -77,8 +78,6 @@ exportBtn.addEventListener('click', async () => {
     ffmpeg.FS('writeFile', 'input.mp4', await fetchFile(videoFile));
 
     const duration = end - start;
-    const [preset, crf] = quality.split('-');
-
     const args = [
       '-ss', `${start}`,
       '-t', `${duration}`,
@@ -88,14 +87,14 @@ exportBtn.addEventListener('click', async () => {
       '-crf', crf,
     ];
 
-    // Handle scaling for resolution, including 1440p
+    if (/^\d+:\d+$/.test(resolution)) {
+      args.push('-vf', `scale=${resolution}`);
+    } else {
+      console.warn('Invalid resolution format, skipping scale filter.');
+    }
+
     if (resolution !== 'original') {
-      // Safety check for format "width:height"
-      if (/^\d+:\d+$/.test(resolution)) {
-        args.push('-vf', `scale=${resolution}`);
-      } else {
-        console.warn('Invalid resolution format, skipping scale filter.');
-      }
+      args.push('-vf', `scale=${resolution}`);
     }
 
     if (mute) {
