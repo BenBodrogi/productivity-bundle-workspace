@@ -251,15 +251,19 @@ exportBtn.addEventListener('click', async () => {
   resetUI();
 });
 
-// ---------------------------------
-// Play/Pause button toggle with syncing
-
+// PLAY/PAUSE fix
 playPauseBtn.addEventListener('click', () => {
   if (videoPreview.paused) {
     videoPreview.play();
   } else {
     videoPreview.pause();
   }
+});
+videoPreview.addEventListener('play', () => {
+  playPauseBtn.textContent = '⏸️';
+});
+videoPreview.addEventListener('pause', () => {
+  playPauseBtn.textContent = '▶️';
 });
 
 // Sync button icon with video state (handles external interactions)
@@ -305,9 +309,14 @@ volumeSlider.addEventListener('input', () => {
   videoPreview.volume = volumeSlider.value;
 });
 
+// MUTE toggle logic fix
 muteToggleBtn.addEventListener('click', () => {
-  muteAudioCheckbox.checked = !muteAudioCheckbox.checked;
-  muteAudioCheckbox.dispatchEvent(new Event('change'));
+  const wasMuted = videoPreview.muted;
+  videoPreview.muted = !wasMuted;
+  muteAudioCheckbox.checked = videoPreview.muted;
+  volumeSlider.value = videoPreview.muted ? 0 : videoPreview.volume;
+  muteToggleBtn.textContent = wasMuted ? '🔈' : '🔇';
+  audioBitrateSelect.disabled = videoPreview.muted;
 });
 
 // ---------------------------------
@@ -338,16 +347,30 @@ videoProgress.addEventListener('pointerleave', () => {
   isDraggingVideoProgress = false;
 });
 
-// ---------------------------------
-// Preview resolution change - demo blur
-
 previewResolution.addEventListener('change', () => {
   const val = previewResolution.value;
-  if (val === 'original') {
-    videoPreview.style.filter = 'none';
-  } else {
-    videoPreview.style.filter = 'blur(1.5px)';
+  switch (val) {
+    case 'original':
+      videoPreview.removeAttribute('width');
+      videoPreview.removeAttribute('height');
+      break;
+    case '720p':
+      videoPreview.width = 1280;
+      videoPreview.height = 720;
+      break;
+    case '480p':
+      videoPreview.width = 854;
+      videoPreview.height = 480;
+      break;
+    case '360p':
+      videoPreview.width = 640;
+      videoPreview.height = 360;
+      break;
+    default:
+      videoPreview.removeAttribute('width');
+      videoPreview.removeAttribute('height');
   }
+  videoPreview.style.filter = 'none'; // ensure no blur
 });
 
 // ---------------------------------
@@ -462,9 +485,8 @@ document.addEventListener('touchmove', e => {
 rewindBtn.addEventListener('click', () => {
   videoPreview.currentTime = Math.max(0, videoPreview.currentTime - 5);
 });
-
 forwardBtn.addEventListener('click', () => {
-  videoPreview.currentTime = Math.min(videoPreview.duration || 0, videoPreview.currentTime + 5);
+  videoPreview.currentTime = Math.min(videoPreview.duration, videoPreview.currentTime + 5);
 });
 
 // ---------------------------------
