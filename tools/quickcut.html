@@ -2,33 +2,34 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>QuickClip - Phase 2</title>
-  <link rel="stylesheet" href="tools-css/quickclip.css" />
+  <title>QuickCut</title>
+  <link rel="stylesheet" href="tools-css/quickcut.css" />
 </head>
 <body>
   <section>
-    <h2>🎬 QuickClip</h2>
+    <h2>🎬 QuickCut</h2>
 
     <input type="file" id="videoInput" accept="video/*" />
     <video id="videoPreview" controls></video>
 
-    <form id="controlsForm">
-      <label for="startTime">Start Time (sec):</label>
-      <input type="number" id="startTime" min="0" value="0" />
-
-      <label for="endTime">End Time (sec):</label>
-      <input type="number" id="endTime" min="0" value="10" />
-
-      <label>
-        <input type="checkbox" id="muteAudio" />
-        Mute Audio
+    <form>
+      <label>Start Time (sec):
+        <input type="number" id="startTime" min="0" value="0" />
       </label>
 
-      <button type="submit" id="exportBtn">📤 Export to WebM</button>
+      <label>End Time (sec):
+        <input type="number" id="endTime" min="0" value="10" />
+      </label>
+
+      <label>
+        <input type="checkbox" id="muteAudio" /> Mute Audio
+      </label>
     </form>
+
+    <button id="exportBtn">📤 Export to WebM</button>
   </section>
 
   <script src="/libs/ffmpeg.min.js"></script>
-  <script src="tools-js/quickclip.js"></script>
+  <script type="module" src="tools-js/quickcut.js"></script>
 </body>
 </html>
