@@ -1,14 +1,4 @@
-const { createFFmpeg, fetchFile } = FFmpeg;
-
-let ffmpeg = createFFmpeg({
-  log: true,
-  corePath: '../../libs/ffmpeg-core.js',
-  wasmPath: '../../libs/ffmpeg-core.wasm',
-  memorySize: 2 * 1024 * 1024 * 1024,
-  logger: ({ type, message }) => {
-    console.log(`[${type}] ${message}`);
-  },
-});
+import { processExport, cancelProcessing } from 'ffmpeg-logic.js';
 
 const videoInput = document.getElementById('videoInput');
 const videoPreview = document.getElementById('videoPreview');
@@ -39,19 +29,9 @@ const totalDurationDisplay = document.getElementById('totalDuration');
 const previewResolution = document.getElementById('previewResolution');
 const videoProgress = document.getElementById('videoProgress');
 
-const timelineTrack = document.querySelector('.timeline-track');
-const timelineFill = document.querySelector('.timeline-fill');
-const handleStart = document.querySelector('.handle-start');
-const handleEnd = document.querySelector('.handle-end');
-
-let videoFile;
+let videoFile = null;
 let isCancelled = false;
-let isDraggingStart = false;
-let isDraggingEnd = false;
-let isDraggingVideoProgress = false;
 
-// ---------------------------------
-// Time helpers mm:ss <-> seconds
 function formatTime(sec) {
   if (isNaN(sec) || sec < 0) return '0:00';
   const m = Math.floor(sec / 60);
@@ -60,25 +40,12 @@ function formatTime(sec) {
 }
 
 function parseTime(str) {
-  // expects "mm:ss"
   const parts = str.split(':');
   if (parts.length !== 2) return NaN;
   const m = parseInt(parts[0], 10);
   const s = parseInt(parts[1], 10);
   if (isNaN(m) || isNaN(s) || s >= 60 || m < 0 || s < 0) return NaN;
   return m * 60 + s;
-}
-
-function clamp(value, min, max) {
-  return Math.min(max, Math.max(min, value));
-}
-
-function timeToPercent(time) {
-  return (time / videoPreview.duration) * 100;
-}
-
-function percentToTime(percent) {
-  return (percent / 100) * videoPreview.duration;
 }
 
 function resetUI() {
@@ -90,25 +57,9 @@ function resetUI() {
   isCancelled = false;
 }
 
-function recreateFFmpeg() {
-  ffmpeg = createFFmpeg({
-    log: true,
-    corePath: '../../libs/ffmpeg-core.js',
-    wasmPath: '../../libs/ffmpeg-core.wasm',
-    memorySize: 2 * 1024 * 1024 * 1024,
-    logger: ({ type, message }) => {
-      console.log(`[${type}] ${message}`);
-    },
-  });
-}
-
-// ---------------------------------
-// Video loading
-
 videoInput.addEventListener('change', () => {
   const file = videoInput.files[0];
   if (!file) return;
-
   videoFile = file;
   videoPreview.src = URL.createObjectURL(file);
   videoPreview.load();
@@ -123,37 +74,10 @@ videoInput.addEventListener('change', () => {
     durationInfo.textContent = `Video Duration: ${formatTime(duration)}`;
     totalDurationDisplay.textContent = formatTime(duration);
     currentTimeDisplay.textContent = formatTime(0);
-    updateTimelineUI();
   };
 });
 
-// ---------------------------------
-// Export button and cancel logic
-
-cancelBtn.addEventListener('click', async () => {
-  if (isCancelled) return;
-  isCancelled = true;
-
-  progressText.textContent = 'Cancelling... Please wait.';
-  exportBtn.disabled = false;
-  cancelBtn.disabled = true;
-
-  try {
-    await ffmpeg.exit();
-    console.log('FFmpeg exited.');
-  } catch (e) {
-    if (e.name === 'ExitStatus') {
-      console.log('FFmpeg exited with code:', e.status);
-    } else {
-      console.error('Unexpected error during ffmpeg.exit():', e);
-    }
-  }
-
-  recreateFFmpeg();
-  resetUI();
-});
-
-exportBtn.addEventListener('click', async () => {
+exportBtn.addEventListener('click', () => {
   if (!videoFile) {
     alert('Please upload a video first!');
     return;
@@ -164,7 +88,7 @@ exportBtn.addEventListener('click', async () => {
   const videoDuration = videoPreview.duration;
 
   if (isNaN(start) || isNaN(end) || start >= end || end > videoDuration) {
-    alert('Please enter valid start and end times (start < end and within video length).');
+    alert('Please enter valid start and end times.');
     return;
   }
 
@@ -182,76 +106,55 @@ exportBtn.addEventListener('click', async () => {
   progressText.style.display = 'block';
   progressText.textContent = 'Loading FFmpeg...';
 
-  try {
-    if (!ffmpeg.isLoaded()) {
-      await ffmpeg.load();
-    }
-
-    ffmpeg.FS('writeFile', 'input.mp4', await fetchFile(videoFile));
-
-    const clipDuration = end - start;
-    const [preset, crf] = quality.split('-');
-
-    const args = [
-      '-ss', `${start}`,
-      '-t', `${clipDuration}`,
-      '-i', 'input.mp4',
-      '-c:v', 'libx264',
-      '-preset', preset,
-      '-crf', crf,
-    ];
-
-    if (resolution !== 'original' && /^\d+:\d+$/.test(resolution)) {
-      args.push('-vf', `scale=${resolution}`);
-    }
-
-    if (mute) {
-      args.push('-an');
-    } else {
-      args.push('-c:a', 'aac', '-b:a', audioBitrate);
-    }
-
-    args.push('output.mp4');
-
-    ffmpeg.setProgress(({ ratio }) => {
+  processExport({
+    file: videoFile,
+    start,
+    end,
+    resolution,
+    quality,
+    mute,
+    audioBitrate,
+    onProgress: (percent) => {
       if (isCancelled) return;
-      const percent = Math.round(ratio * 100);
       progressBar.value = percent;
       progressText.textContent = `Processing: ${percent}%`;
-    });
+    },
+    onComplete: (blobUrl) => {
+      progressText.textContent = 'Export complete! Preparing download...';
+      progressBar.value = 100;
 
-    await ffmpeg.run(...args);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = 'quickcut_output.mp4';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(blobUrl);
 
-    if (isCancelled) {
       resetUI();
-      return;
-    }
+    },
+    onError: (err) => {
+      if (!isCancelled) {
+        alert('Error during export: ' + err.message);
+        resetUI();
+      }
+    },
+  });
+});
 
-    progressText.textContent = 'Export complete! Preparing download...';
-    progressBar.value = 100;
+cancelBtn.addEventListener('click', async () => {
+  if (isCancelled) return;
+  isCancelled = true;
 
-    const data = ffmpeg.FS('readFile', 'output.mp4');
-    const url = URL.createObjectURL(new Blob([data.buffer], { type: 'video/mp4' }));
+  progressText.textContent = 'Cancelling... Please wait.';
+  exportBtn.disabled = false;
+  cancelBtn.disabled = true;
 
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'quickcut_output.mp4';
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
-
-  } catch (e) {
-    if (!isCancelled) {
-      console.error('Error during export:', e);
-      alert('Error during export: ' + e.message);
-    }
-  }
-
+  await cancelProcessing();
   resetUI();
 });
 
-// PLAY/PAUSE fix
+// Play/Pause button logic
 playPauseBtn.addEventListener('click', () => {
   if (videoPreview.paused) {
     videoPreview.play();
@@ -266,17 +169,7 @@ videoPreview.addEventListener('pause', () => {
   playPauseBtn.textContent = '▶️';
 });
 
-// Sync button icon with video state (handles external interactions)
-videoPreview.addEventListener('play', () => {
-  playPauseBtn.textContent = '⏸️';
-});
-videoPreview.addEventListener('pause', () => {
-  playPauseBtn.textContent = '▶️';
-});
-
-// ---------------------------------
-// Mute checkbox & volume slider sync
-
+// Volume and mute sync
 function updateAudioState() {
   if (muteAudioCheckbox.checked || volumeSlider.value == 0) {
     videoPreview.muted = true;
@@ -309,7 +202,6 @@ volumeSlider.addEventListener('input', () => {
   videoPreview.volume = volumeSlider.value;
 });
 
-// MUTE toggle logic fix
 muteToggleBtn.addEventListener('click', () => {
   const wasMuted = videoPreview.muted;
   videoPreview.muted = !wasMuted;
@@ -319,169 +211,21 @@ muteToggleBtn.addEventListener('click', () => {
   audioBitrateSelect.disabled = videoPreview.muted;
 });
 
-// ---------------------------------
-// Video time update and progress slider sync
-
+// Video time update and slider sync
 videoPreview.addEventListener('timeupdate', () => {
-  if (!isDraggingVideoProgress) {
-    currentTimeDisplay.textContent = formatTime(videoPreview.currentTime);
-    videoProgress.value = videoPreview.currentTime;
-  }
+  currentTimeDisplay.textContent = formatTime(videoPreview.currentTime);
+  videoProgress.value = videoPreview.currentTime;
 });
 
-// Use pointer events for slider dragging to avoid sticking issues
-videoProgress.addEventListener('pointerdown', () => {
-  isDraggingVideoProgress = true;
-});
 videoProgress.addEventListener('input', () => {
   currentTimeDisplay.textContent = formatTime(videoProgress.value);
 });
-videoProgress.addEventListener('pointerup', () => {
+
+videoProgress.addEventListener('change', () => {
   videoPreview.currentTime = videoProgress.value;
-  isDraggingVideoProgress = false;
-});
-videoProgress.addEventListener('pointercancel', () => {
-  isDraggingVideoProgress = false;
-});
-videoProgress.addEventListener('pointerleave', () => {
-  isDraggingVideoProgress = false;
 });
 
-previewResolution.addEventListener('change', () => {
-  const val = previewResolution.value;
-  switch (val) {
-    case 'original':
-      videoPreview.removeAttribute('width');
-      videoPreview.removeAttribute('height');
-      break;
-    case '720p':
-      videoPreview.width = 1280;
-      videoPreview.height = 720;
-      break;
-    case '480p':
-      videoPreview.width = 854;
-      videoPreview.height = 480;
-      break;
-    case '360p':
-      videoPreview.width = 640;
-      videoPreview.height = 360;
-      break;
-    default:
-      videoPreview.removeAttribute('width');
-      videoPreview.removeAttribute('height');
-  }
-  videoPreview.style.filter = 'none'; // ensure no blur
-});
-
-// ---------------------------------
-// Timeline slider drag and input sync
-
-function updateTimelineUI() {
-  const startSec = clamp(parseTime(startTimeInput.value), 0, videoPreview.duration);
-  const endSec = clamp(parseTime(endTimeInput.value), 0, videoPreview.duration);
-
-  const startPercent = timeToPercent(startSec);
-  const endPercent = timeToPercent(endSec);
-
-  timelineFill.style.left = `${startPercent}%`;
-  timelineFill.style.width = `${endPercent - startPercent}%`;
-
-  handleStart.style.left = `${startPercent}%`;
-  handleEnd.style.left = `${endPercent}%`;
-
-  // Clamp inputs
-  if (startSec >= endSec) {
-    startTimeInput.style.borderColor = 'red';
-    endTimeInput.style.borderColor = 'red';
-  } else {
-    startTimeInput.style.borderColor = '';
-    endTimeInput.style.borderColor = '';
-  }
-}
-
-startTimeInput.addEventListener('input', () => {
-  if (!isNaN(parseTime(startTimeInput.value))) {
-    updateTimelineUI();
-  }
-});
-
-endTimeInput.addEventListener('input', () => {
-  if (!isNaN(parseTime(endTimeInput.value))) {
-    updateTimelineUI();
-  }
-});
-
-function onHandleDrag(e, handle) {
-  e.preventDefault();
-
-  const rect = timelineTrack.getBoundingClientRect();
-  let clientX = e.clientX !== undefined ? e.clientX : e.touches[0].clientX;
-
-  let percent = ((clientX - rect.left) / rect.width) * 100;
-  percent = clamp(percent, 0, 100);
-
-  if (handle === handleStart) {
-    // Prevent crossing over end
-    const endPercent = parseFloat(handleEnd.style.left);
-    if (percent > endPercent) percent = endPercent;
-    handle.style.left = percent + '%';
-
-    const newStartTime = percentToTime(percent);
-    startTimeInput.value = formatTime(newStartTime);
-  } else if (handle === handleEnd) {
-    // Prevent crossing over start
-    const startPercent = parseFloat(handleStart.style.left);
-    if (percent < startPercent) percent = startPercent;
-    handle.style.left = percent + '%';
-
-    const newEndTime = percentToTime(percent);
-    endTimeInput.value = formatTime(newEndTime);
-  }
-  updateTimelineUI();
-}
-
-handleStart.addEventListener('mousedown', e => {
-  isDraggingStart = true;
-  document.body.style.userSelect = 'none';
-});
-handleEnd.addEventListener('mousedown', e => {
-  isDraggingEnd = true;
-  document.body.style.userSelect = 'none';
-});
-document.addEventListener('mouseup', e => {
-  if (isDraggingStart || isDraggingEnd) {
-    isDraggingStart = false;
-    isDraggingEnd = false;
-    document.body.style.userSelect = '';
-  }
-});
-document.addEventListener('mousemove', e => {
-  if (isDraggingStart) onHandleDrag(e, handleStart);
-  if (isDraggingEnd) onHandleDrag(e, handleEnd);
-});
-
-// Touch events
-handleStart.addEventListener('touchstart', e => {
-  isDraggingStart = true;
-  document.body.style.userSelect = 'none';
-});
-handleEnd.addEventListener('touchstart', e => {
-  isDraggingEnd = true;
-  document.body.style.userSelect = 'none';
-});
-document.addEventListener('touchend', e => {
-  isDraggingStart = false;
-  isDraggingEnd = false;
-  document.body.style.userSelect = '';
-});
-document.addEventListener('touchmove', e => {
-  if (isDraggingStart) onHandleDrag(e, handleStart);
-  if (isDraggingEnd) onHandleDrag(e, handleEnd);
-});
-
-// ---------------------------------
-// Skip/Rewind buttons logic (+/- 5 seconds)
-
+// Rewind and Forward buttons
 rewindBtn.addEventListener('click', () => {
   videoPreview.currentTime = Math.max(0, videoPreview.currentTime - 5);
 });
@@ -489,8 +233,29 @@ forwardBtn.addEventListener('click', () => {
   videoPreview.currentTime = Math.min(videoPreview.duration, videoPreview.currentTime + 5);
 });
 
-// ---------------------------------
-// Initial state
-
-updateAudioState();
-updateTimelineUI();
+// Preview resolution dropdown
+previewResolution.addEventListener('change', () => {
+  const val = previewResolution.value;
+  switch (val) {
+    case 'original':
+      videoPreview.removeAttribute('width');
+      videoPreview.removeAttribute('height');
+      break;
+    case '1920x1080':
+      videoPreview.width = 1920;
+      videoPreview.height = 1080;
+      break;
+    case '1280x720':
+      videoPreview.width = 1280;
+      videoPreview.height = 720;
+      break;
+    case '854x480':
+      videoPreview.width = 854;
+      videoPreview.height = 480;
+      break;
+    default:
+      videoPreview.removeAttribute('width');
+      videoPreview.removeAttribute('height');
+  }
+  videoPreview.style.filter = 'none'; // remove blur if any
+});
