@@ -33,10 +33,19 @@ const currentTimeDisplay = document.getElementById('currentTime');
 const totalDurationDisplay = document.getElementById('totalDuration');
 const previewResolution = document.getElementById('previewResolution');
 
+const timelineTrack = document.querySelector('.timeline-track');
+const timelineFill = document.querySelector('.timeline-fill');
+const handleStart = document.querySelector('.handle-start');
+const handleEnd = document.querySelector('.handle-end');
+
 let videoFile;
 let isCancelled = false;
+let duration = 0;
+let isDraggingStart = false;
+let isDraggingEnd = false;
 
-// Helper: UI reset
+// ----------- Helper functions -----------
+
 function resetUI() {
   progressBar.style.display = 'none';
   progressText.style.display = 'none';
@@ -46,7 +55,6 @@ function resetUI() {
   isCancelled = false;
 }
 
-// Helper: Recreate FFmpeg instance
 function recreateFFmpeg() {
   ffmpeg = createFFmpeg({
     log: true,
@@ -59,6 +67,41 @@ function recreateFFmpeg() {
   });
 }
 
+function formatTime(sec) {
+  const minutes = Math.floor(sec / 60);
+  const seconds = Math.floor(sec % 60).toString().padStart(2, '0');
+  return `${minutes}:${seconds}`;
+}
+
+function updateTimeDisplays() {
+  currentTimeDisplay.textContent = formatTime(videoPreview.currentTime);
+  totalDurationDisplay.textContent = formatTime(duration);
+}
+
+function timeToPercent(time) {
+  return (time / duration) * 100;
+}
+
+function percentToTime(percent) {
+  return (percent / 100) * duration;
+}
+
+function updateTimelineUI() {
+  const startPercent = timeToPercent(parseFloat(startTimeInput.value));
+  const endPercent = timeToPercent(parseFloat(endTimeInput.value));
+
+  const clampedStart = Math.min(startPercent, endPercent);
+  const clampedEnd = Math.max(startPercent, endPercent);
+
+  timelineFill.style.left = `${clampedStart}%`;
+  timelineFill.style.width = `${clampedEnd - clampedStart}%`;
+
+  handleStart.style.left = `${clampedStart}%`;
+  handleEnd.style.left = `${clampedEnd}%`;
+}
+
+// ----------- Event Listeners -----------
+
 // Video load
 videoInput.addEventListener('change', () => {
   const file = videoInput.files[0];
@@ -69,12 +112,13 @@ videoInput.addEventListener('change', () => {
   videoPreview.load();
 
   videoPreview.onloadedmetadata = () => {
-    const duration = Math.floor(videoPreview.duration);
-    endTimeInput.value = duration;
+    duration = videoPreview.duration;
+    endTimeInput.value = duration.toFixed(2);
     startTimeInput.value = 0;
-    durationInfo.textContent = `Video Duration: ${duration} seconds`;
+    durationInfo.textContent = `Video Duration: ${Math.floor(duration)} seconds`;
     totalDurationDisplay.textContent = formatTime(duration);
     currentTimeDisplay.textContent = formatTime(0);
+    updateTimelineUI();
   };
 });
 
@@ -207,11 +251,13 @@ exportBtn.addEventListener('click', async () => {
   resetUI();
 });
 
-// ========== CUSTOM VIDEO CONTROLS ==========
+// ----------- CUSTOM VIDEO CONTROLS -----------
 
 videoPreview.addEventListener('loadedmetadata', () => {
-  totalDurationDisplay.textContent = formatTime(videoPreview.duration);
+  duration = videoPreview.duration;
+  totalDurationDisplay.textContent = formatTime(duration);
   currentTimeDisplay.textContent = formatTime(0);
+  updateTimelineUI();
 });
 
 videoPreview.addEventListener('timeupdate', () => {
@@ -249,9 +295,90 @@ previewResolution.addEventListener('change', () => {
   }
 });
 
-// Helper function to format seconds to M:SS
-function formatTime(sec) {
-  const minutes = Math.floor(sec / 60);
-  const seconds = Math.floor(sec % 60).toString().padStart(2, '0');
-  return `${minutes}:${seconds}`;
+// ----------- TIMELINE DRAGGING -----------
+
+function setupHandleDragging() {
+  function onDragStart(e) {
+    if (e.target === handleStart) isDraggingStart = true;
+    if (e.target === handleEnd) isDraggingEnd = true;
+  }
+
+  function onDragEnd() {
+    isDraggingStart = false;
+    isDraggingEnd = false;
+  }
+
+  function onDragMove(e) {
+    if (!isDraggingStart && !isDraggingEnd) return;
+
+    const rect = timelineTrack.getBoundingClientRect();
+    let x = e.clientX;
+    if (e.touches) x = e.touches[0].clientX;
+
+    let percent = ((x - rect.left) / rect.width) * 100;
+    percent = Math.min(100, Math.max(0, percent));
+
+    const time = percentToTime(percent);
+
+    if (isDraggingStart) {
+      const endVal = parseFloat(endTimeInput.value);
+      if (time >= endVal) return;
+      startTimeInput.value = time.toFixed(2);
+    } else if (isDraggingEnd) {
+      const startVal = parseFloat(startTimeInput.value);
+      if (time <= startVal) return;
+      endTimeInput.value = time.toFixed(2);
+    }
+
+    updateTimelineUI();
+  }
+
+  handleStart.addEventListener('dragstart', onDragStart);
+  handleEnd.addEventListener('dragstart', onDragStart);
+
+  window.addEventListener('dragend', onDragEnd);
+  window.addEventListener('dragcancel', onDragEnd);
+
+  window.addEventListener('dragover', e => {
+    e.preventDefault();
+    onDragMove(e);
+  });
+
+  // Touch support
+  handleStart.addEventListener('touchstart', onDragStart);
+  handleEnd.addEventListener('touchstart', onDragStart);
+
+  window.addEventListener('touchend', onDragEnd);
+  window.addEventListener('touchcancel', onDragEnd);
+
+  window.addEventListener('touchmove', e => {
+    e.preventDefault();
+    onDragMove(e.touches[0]);
+  }, { passive: false });
 }
+
+// Sync timeline handles and inputs on manual input changes
+startTimeInput.addEventListener('input', () => {
+  let startVal = parseFloat(startTimeInput.value);
+  let endVal = parseFloat(endTimeInput.value);
+
+  if (startVal < 0) startVal = 0;
+  if (startVal >= endVal) startVal = endVal - 0.1;
+
+  startTimeInput.value = startVal.toFixed(2);
+  updateTimelineUI();
+});
+
+endTimeInput.addEventListener('input', () => {
+  let startVal = parseFloat(startTimeInput.value);
+  let endVal = parseFloat(endTimeInput.value);
+
+  if (endVal > duration) endVal = duration;
+  if (endVal <= startVal) endVal = startVal + 0.1;
+
+  endTimeInput.value = endVal.toFixed(2);
+  updateTimelineUI();
+});
+
+// Initialize timeline dragging on page load
+setupHandleDragging();
