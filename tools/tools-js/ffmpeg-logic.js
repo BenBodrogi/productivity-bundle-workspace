@@ -1,3 +1,5 @@
+const { createFFmpeg, fetchFile } = FFmpeg;
+
 let ffmpeg = createFFmpeg({
   log: true,
   corePath: '../../libs/ffmpeg-core.js',
