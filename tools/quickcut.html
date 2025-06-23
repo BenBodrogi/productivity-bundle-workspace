@@ -1,70 +1,62 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>QuickCut</title>
-  <link rel="stylesheet" href="tools-css/quickcut.css" />
-  <script src="../libs/ffmpeg.min.js"></script>
-  <script src="tools-js/quickcut.js" defer></script>
-</head>
 <body>
-  <section>
-    <h2>🎬 QuickCut</h2>
+  <div class="editor-wrapper">
+    <aside class="sidebar">
+      <h2>🎬 QuickCut</h2>
+      <input type="file" id="videoInput" accept="video/*" />
+      <div class="duration" id="durationInfo"></div>
 
-    <input type="file" id="videoInput" accept="video/*" />
-    <video id="videoPreview" controls></video>
+      <details class="export-settings" open>
+        <summary>⚙️ Export Settings</summary>
 
-    <form>
-      <label>Start Time (sec):
-        <input type="number" id="startTime" min="0" value="0" />
-      </label>
+        <label for="resolutionSelect">Resolution:</label>
+        <select id="resolutionSelect">
+          <option value="original">Original</option>
+          <option value="2560:1440">1440p</option>
+          <option value="1920:1080">1080p</option>
+          <option value="1280:720">720p</option>
+        </select>
 
-      <label>End Time (sec):
-        <input type="number" id="endTime" min="0" value="10" />
-      </label>
+        <label for="qualitySelect">Quality:</label>
+        <select id="qualitySelect">
+          <option value="ultrafast-28">Ultra Fast</option>
+          <option value="superfast-26">Super Fast</option>
+          <option value="veryfast-24">Very Fast</option>
+          <option value="fast-22">Fast</option>
+          <option value="medium-23" selected>Balanced</option>
+          <option value="slow-18">Slow</option>
+          <option value="veryslow-15">Very Slow</option>
+        </select>
 
-      <label class="checkbox-label">
-        <input type="checkbox" id="muteAudio" /> Mute Audio
-      </label>
+        <label for="audioBitrateSelect">Audio Bitrate:</label>
+        <select id="audioBitrateSelect" disabled>
+          <option value="64000">64 kbps</option>
+          <option value="96000">96 kbps</option>
+          <option value="128000" selected>128 kbps</option>
+          <option value="192000">192 kbps</option>
+          <option value="256000">256 kbps</option>
+        </select>
 
-      <label for="resolutionSelect">Output Resolution:</label>
-      <select id="resolutionSelect">
-        <option value="original">Original</option>
-        <option value="2560:1440">1440p (2560x1440)</option>
-        <option value="1920:1080">1080p (1920x1080)</option>
-        <option value="1280:720">720p (1280x720)</option>
-      </select>
+        <label class="checkbox-label">
+          <input type="checkbox" id="muteAudio" /> Mute Audio
+        </label>
+      </details>
 
-      <label for="qualitySelect">Quality Preset:</label>
-      <select id="qualitySelect">
-        <option value="ultrafast-28">Ultra Fast (CRF 28, ultrafast, worst quality)</option>
-        <option value="superfast-26">Super Fast (CRF 26, superfast)</option>
-        <option value="veryfast-24">Very Fast (CRF 24, veryfast)</option>
-        <option value="fast-22">Fast (CRF 22, fast)</option>
-        <option value="medium-23" selected>Balanced (CRF 23, medium)</option>
-        <option value="slow-18">Slow (CRF 18, slow)</option>
-        <option value="veryslow-15">Very Slow (CRF 15, veryslow, best quality)</option>
-      </select>
+      <div class="button-row">
+        <button id="exportBtn">📤 Export</button>
+        <button id="cancelBtn" disabled>✖ Cancel</button>
+      </div>
 
-      <label for="audioBitrateSelect">Audio Bitrate:</label>
-      <select id="audioBitrateSelect" disabled>
-        <option value="64000">64 kbps</option>
-        <option value="96000">96 kbps</option>
-        <option value="128000" selected>128 kbps</option>
-        <option value="192000">192 kbps</option>
-        <option value="256000">256 kbps</option>
-      </select>
-    </form>
+      <progress id="progressBar" value="0" max="100"></progress>
+      <div id="progressText"></div>
+    </aside>
 
-    <div id="durationInfo"></div>
+    <main class="video-area">
+      <video id="videoPreview" controls></video>
 
-    <div class="button-row">
-      <button id="exportBtn">📤 Export to MP4</button>
-      <button id="cancelBtn" disabled>✖ Cancel</button>
-    </div>
-
-    <progress id="progressBar" value="0" max="100"></progress>
-    <div id="progressText"></div>
-  </section>
+      <div class="timeline-bar">
+        <label>Start (sec): <input type="number" id="startTime" min="0" value="0" /></label>
+        <label>End (sec): <input type="number" id="endTime" min="0" value="10" /></label>
+      </div>
+    </main>
+  </div>
 </body>
-</html>
