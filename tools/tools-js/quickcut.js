@@ -62,21 +62,23 @@ exportBtn.addEventListener('click', async () => {
       '-ss', `${start}`,
       '-t', `${duration}`,
       '-i', 'input.mp4',
-      '-c', 'copy',
-      ...(mute ? ['-an'] : []),
-      'output.webm',
+      '-c:v', 'libx264',
+      '-preset', 'fast',
+      '-crf', '23',
+      ...(mute ? ['-an'] : ['-c:a', 'aac']),
+      'output.mp4',
     ];
 
     console.log('Running ffmpeg with args:', args.join(' '));
     await ffmpeg.run(...args);
     console.log('ffmpeg processing finished.');
 
-    const data = ffmpeg.FS('readFile', 'output.webm');
-    const url = URL.createObjectURL(new Blob([data.buffer], { type: 'video/webm' }));
+    const data = ffmpeg.FS('readFile', 'output.mp4');
+    const url = URL.createObjectURL(new Blob([data.buffer], { type: 'video/mp4' }));
 
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'quickcut_output.webm';
+    a.download = 'quickcut_output.mp4';
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -89,5 +91,5 @@ exportBtn.addEventListener('click', async () => {
   }
 
   exportBtn.disabled = false;
-  exportBtn.textContent = '📤 Export to WebM';
+  exportBtn.textContent = '📤 Export to MP4';
 });
