@@ -46,7 +46,6 @@ const handleEnd = document.querySelector('.handle-end');
 
 let videoFile;
 let isCancelled = false;
-let duration = 0;
 let isDraggingStart = false;
 let isDraggingEnd = false;
 let isDraggingVideoProgress = false;
@@ -75,11 +74,11 @@ function clamp(value, min, max) {
 }
 
 function timeToPercent(time) {
-  return (time / duration) * 100;
+  return (time / videoPreview.duration) * 100;
 }
 
 function percentToTime(percent) {
-  return (percent / 100) * duration;
+  return (percent / 100) * videoPreview.duration;
 }
 
 function resetUI() {
@@ -115,7 +114,7 @@ videoInput.addEventListener('change', () => {
   videoPreview.load();
 
   videoPreview.onloadedmetadata = () => {
-    duration = videoPreview.duration;
+    const duration = videoPreview.duration;
     startTimeInput.value = '0:00';
     endTimeInput.value = formatTime(duration);
     videoProgress.max = duration;
@@ -162,8 +161,9 @@ exportBtn.addEventListener('click', async () => {
 
   const start = parseTime(startTimeInput.value);
   const end = parseTime(endTimeInput.value);
+  const videoDuration = videoPreview.duration;
 
-  if (isNaN(start) || isNaN(end) || start >= end || end > duration) {
+  if (isNaN(start) || isNaN(end) || start >= end || end > videoDuration) {
     alert('Please enter valid start and end times (start < end and within video length).');
     return;
   }
@@ -252,16 +252,22 @@ exportBtn.addEventListener('click', async () => {
 });
 
 // ---------------------------------
-// Play/Pause button toggle with matching icons
+// Play/Pause button toggle with syncing
 
 playPauseBtn.addEventListener('click', () => {
   if (videoPreview.paused) {
     videoPreview.play();
-    playPauseBtn.textContent = '⏸️';
   } else {
     videoPreview.pause();
-    playPauseBtn.textContent = '▶️';
   }
+});
+
+// Sync button icon with video state (handles external interactions)
+videoPreview.addEventListener('play', () => {
+  playPauseBtn.textContent = '⏸️';
+});
+videoPreview.addEventListener('pause', () => {
+  playPauseBtn.textContent = '▶️';
 });
 
 // ---------------------------------
@@ -314,18 +320,26 @@ videoPreview.addEventListener('timeupdate', () => {
   }
 });
 
-videoProgress.addEventListener('input', () => {
+// Use pointer events for slider dragging to avoid sticking issues
+videoProgress.addEventListener('pointerdown', () => {
   isDraggingVideoProgress = true;
+});
+videoProgress.addEventListener('input', () => {
   currentTimeDisplay.textContent = formatTime(videoProgress.value);
 });
-
-videoProgress.addEventListener('change', () => {
+videoProgress.addEventListener('pointerup', () => {
   videoPreview.currentTime = videoProgress.value;
+  isDraggingVideoProgress = false;
+});
+videoProgress.addEventListener('pointercancel', () => {
+  isDraggingVideoProgress = false;
+});
+videoProgress.addEventListener('pointerleave', () => {
   isDraggingVideoProgress = false;
 });
 
 // ---------------------------------
-// Preview resolution change - only blur if not original
+// Preview resolution change - demo blur
 
 previewResolution.addEventListener('change', () => {
   const val = previewResolution.value;
@@ -340,8 +354,8 @@ previewResolution.addEventListener('change', () => {
 // Timeline slider drag and input sync
 
 function updateTimelineUI() {
-  const startSec = clamp(parseTime(startTimeInput.value), 0, duration);
-  const endSec = clamp(parseTime(endTimeInput.value), 0, duration);
+  const startSec = clamp(parseTime(startTimeInput.value), 0, videoPreview.duration);
+  const endSec = clamp(parseTime(endTimeInput.value), 0, videoPreview.duration);
 
   const startPercent = timeToPercent(startSec);
   const endPercent = timeToPercent(endSec);
@@ -450,7 +464,7 @@ rewindBtn.addEventListener('click', () => {
 });
 
 forwardBtn.addEventListener('click', () => {
-  videoPreview.currentTime = Math.min(duration, videoPreview.currentTime + 5);
+  videoPreview.currentTime = Math.min(videoPreview.duration || 0, videoPreview.currentTime + 5);
 });
 
 // ---------------------------------
