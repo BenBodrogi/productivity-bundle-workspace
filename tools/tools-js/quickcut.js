@@ -252,7 +252,7 @@ exportBtn.addEventListener('click', async () => {
 });
 
 // ---------------------------------
-// Play/Pause button toggle
+// Play/Pause button toggle with matching icons
 
 playPauseBtn.addEventListener('click', () => {
   if (videoPreview.paused) {
@@ -325,8 +325,7 @@ videoProgress.addEventListener('change', () => {
 });
 
 // ---------------------------------
-// Preview resolution change - (Example: could blur or switch resolution in real usage)
-// Just updating video CSS filter for demo
+// Preview resolution change - only blur if not original
 
 previewResolution.addEventListener('change', () => {
   const val = previewResolution.value;
@@ -364,13 +363,13 @@ function updateTimelineUI() {
 }
 
 startTimeInput.addEventListener('input', () => {
-  if (parseTime(startTimeInput.value) !== NaN) {
+  if (!isNaN(parseTime(startTimeInput.value))) {
     updateTimelineUI();
   }
 });
 
 endTimeInput.addEventListener('input', () => {
-  if (parseTime(endTimeInput.value) !== NaN) {
+  if (!isNaN(parseTime(endTimeInput.value))) {
     updateTimelineUI();
   }
 });
@@ -408,12 +407,10 @@ handleStart.addEventListener('mousedown', e => {
   isDraggingStart = true;
   document.body.style.userSelect = 'none';
 });
-
 handleEnd.addEventListener('mousedown', e => {
   isDraggingEnd = true;
   document.body.style.userSelect = 'none';
 });
-
 document.addEventListener('mouseup', e => {
   if (isDraggingStart || isDraggingEnd) {
     isDraggingStart = false;
@@ -421,14 +418,12 @@ document.addEventListener('mouseup', e => {
     document.body.style.userSelect = '';
   }
 });
-
 document.addEventListener('mousemove', e => {
   if (isDraggingStart) onHandleDrag(e, handleStart);
   if (isDraggingEnd) onHandleDrag(e, handleEnd);
 });
 
-// Touch events for mobile
-
+// Touch events
 handleStart.addEventListener('touchstart', e => {
   isDraggingStart = true;
   document.body.style.userSelect = 'none';
