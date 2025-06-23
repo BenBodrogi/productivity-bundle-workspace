@@ -88,8 +88,14 @@ exportBtn.addEventListener('click', async () => {
       '-crf', crf,
     ];
 
+    // Handle scaling for resolution, including 1440p
     if (resolution !== 'original') {
-      args.push('-vf', `scale=${resolution}`);
+      // Safety check for format "width:height"
+      if (/^\d+:\d+$/.test(resolution)) {
+        args.push('-vf', `scale=${resolution}`);
+      } else {
+        console.warn('Invalid resolution format, skipping scale filter.');
+      }
     }
 
     if (mute) {
