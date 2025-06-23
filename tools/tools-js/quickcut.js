@@ -6,11 +6,8 @@ const ffmpeg = createFFmpeg({
   wasmPath: '../../libs/ffmpeg-core.wasm',
   memorySize: 2 * 1024 * 1024 * 1024,
   logger: ({ type, message }) => {
-    const logElem = document.getElementById('log');
-    if (logElem) {
-      logElem.textContent += `[${type}] ${message}\n`;
-      logElem.scrollTop = logElem.scrollHeight;
-    }
+    // Optional: Keep console log for debugging
+    console.log(`[${type}] ${message}`);
   },
 });
 
@@ -20,6 +17,8 @@ const startTimeInput = document.getElementById('startTime');
 const endTimeInput = document.getElementById('endTime');
 const muteAudioCheckbox = document.getElementById('muteAudio');
 const exportBtn = document.getElementById('exportBtn');
+const progressBar = document.getElementById('progressBar');
+const progressText = document.getElementById('progressText');
 
 let videoFile;
 
@@ -55,8 +54,11 @@ exportBtn.addEventListener('click', async () => {
   exportBtn.disabled = true;
   exportBtn.textContent = 'Processing...';
 
-  const logElem = document.getElementById('log');
-  if (logElem) logElem.textContent = '';
+  // Show and reset progress UI
+  progressBar.style.display = 'block';
+  progressBar.value = 0;
+  progressText.style.display = 'block';
+  progressText.textContent = 'Starting...';
 
   try {
     if (!ffmpeg.isLoaded()) {
@@ -77,6 +79,13 @@ exportBtn.addEventListener('click', async () => {
       'output.mp4',
     ];
 
+    // Track progress with ffmpeg.setProgress
+    ffmpeg.setProgress(({ ratio }) => {
+      const percent = Math.round(ratio * 100);
+      progressBar.value = percent;
+      progressText.textContent = `Processing: ${percent}%`;
+    });
+
     await ffmpeg.run(...args);
 
     const data = ffmpeg.FS('readFile', 'output.mp4');
@@ -95,6 +104,10 @@ exportBtn.addEventListener('click', async () => {
     console.error('Error during video processing:', e);
     alert('Error during video processing: ' + e.message);
   }
+
+  // Hide progress bar/text and re-enable button
+  progressBar.style.display = 'none';
+  progressText.style.display = 'none';
 
   exportBtn.disabled = false;
   exportBtn.textContent = '📤 Export to MP4';
