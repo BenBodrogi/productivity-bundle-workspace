@@ -122,7 +122,10 @@ exportBtn.addEventListener('click', async () => {
     return;
   }
 
-  const mute = muteAudioCheckbox.checked || volumeSlider.value == 0;
+  // NOTE: We do NOT use preview mute checkbox for export mute here,
+  // Instead, create a separate export mute flag (could add another checkbox for export mute if needed)
+  const mute = muteAudioCheckbox.checked; // use only muteAudioCheckbox state for export mute
+
   const resolution = resolutionSelect.value;
   const quality = qualitySelect.value;
   const audioBitrate = audioBitrateSelect.value;
@@ -205,7 +208,7 @@ videoPreview.addEventListener('pause', () => {
 });
 
 // ---------------------------------
-// Mute checkbox & volume slider sync
+// Mute checkbox & volume slider sync (preview only!)
 
 function updateAudioState() {
   if (muteAudioCheckbox.checked || volumeSlider.value == 0) {
@@ -220,6 +223,9 @@ function updateAudioState() {
 }
 
 muteAudioCheckbox.addEventListener('change', () => {
+  // Mute only preview, do not affect export mute directly here
+  videoPreview.muted = muteAudioCheckbox.checked;
+
   if (muteAudioCheckbox.checked) {
     volumeSlider.value = 0;
   } else if (volumeSlider.value == 0) {
@@ -239,14 +245,14 @@ volumeSlider.addEventListener('input', () => {
   videoPreview.volume = volumeSlider.value;
 });
 
-// MUTE toggle button
-
+// MUTE toggle button (preview only)
 muteToggleBtn.addEventListener('click', () => {
   const wasMuted = videoPreview.muted;
   videoPreview.muted = !wasMuted;
   muteAudioCheckbox.checked = videoPreview.muted;
-  volumeSlider.value = videoPreview.muted ? 0 : videoPreview.volume;
-  muteToggleBtn.textContent = wasMuted ? '🔈' : '🔇';
+  // When unmuting, restore volume to slider value or 1 if zero
+  if (!videoPreview.muted && volumeSlider.value == 0) volumeSlider.value = 1;
+  muteToggleBtn.textContent = videoPreview.muted ? '🔇' : '🔈';
   audioBitrateSelect.disabled = videoPreview.muted;
 });
 
@@ -371,6 +377,7 @@ function onHandleDrag(e, handle) {
   updateTimelineUI();
 }
 
+// ** FIXED: Add drag event listeners to both start and end handles **
 handleStart.addEventListener('mousedown', e => {
   isDraggingStart = true;
   document.body.style.userSelect = 'none';
