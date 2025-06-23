@@ -1,0 +1,753 @@
+/* Animate custom color properties for gradient */
+@property --grad-color1 {
+  syntax: '<color>';
+  initial-value: #1f2a44;
+  inherits: false;
+}
+@property --grad-color2 {
+  syntax: '<color>';
+  initial-value: #162139;
+  inherits: false;
+}
+@property --grad-color3 {
+  syntax: '<color>';
+  initial-value: #0f182a;
+  inherits: false;
+}
+
+/* Base and Layout */
+html, body {
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-family: Arial, sans-serif;
+  background: linear-gradient(135deg, var(--grad-color1), var(--grad-color2) 60%, var(--grad-color3));
+  transition: --grad-color1 1.5s ease, --grad-color2 1.5s ease, --grad-color3 1.5s ease;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Gamified mode changes the gradient colors smoothly */
+body.gamified {
+  --grad-color1: #0c0032;
+  --grad-color2: #240050;
+  --grad-color3: #0a003c;
+}
+
+/* Remove old gradient overlay since bg is now animated */
+body::before {
+  content: none;
+}
+
+/* Container */
+#ui-container {
+  width: 50%; /* bigger container */
+  max-width: 30%;
+  padding: 2.5rem;
+  border-radius: 12px;
+  background-color: #24354a; /* brighter, deep blue for non-gamified */
+  color: #e1e8f0; /* lighter text */
+  box-shadow: 0 0 10px #4a6a9e; /* subtle glowing shadow */
+  transition: background-color 1s ease, color 1s ease, box-shadow 1s ease;
+  user-select: none;
+  font-weight: 500;
+}
+body.gamified #ui-container {
+  background-color: #1e0059; /* deep violet base */
+  color: #a0f0ff;
+  box-shadow:
+    0 0 25px #00ffff,
+    inset 0 0 30px #0077a3;
+  font-weight: 600;
+}
+
+/* Form */
+form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 20px;
+  justify-content: space-between;
+}
+
+form input[type="text"],
+form select,
+form input[type="date"],
+form button {
+  padding: 10px 12px;
+  font-size: 16px;
+  border-radius: 6px;
+  border: 1px solid #444;
+  background-color: #0e1b27;
+  color: #e4f1ff;
+  flex: 1 1 calc(48% - 6px);
+  min-width: 140px;
+}
+
+form select {
+  appearance: none;
+  background-color: #0e1b27;
+  color: #e4f1ff;
+  border: 1px solid #444;
+  cursor: pointer;
+}
+
+form select option[disabled][selected] {
+  color: #999;
+}
+
+form input[type="date"]::placeholder {
+  color: #999;
+}
+
+input[type="text"]:focus {
+  border-color: #999;
+  outline: none;
+  box-shadow: 0 0 6px #aaa;
+}
+
+body.gamified form input[type="text"],
+body.gamified form input[type="date"],
+body.gamified form select {
+  background-color: #150045;
+  color: #b0f7ff;
+  border-color: #00ffff;
+  box-shadow: 0 0 10px #00ffff;
+}
+
+body.gamified form select {
+  box-shadow: 0 0 10px #00ffff;
+}
+
+body.gamified form input[type="date"]::placeholder {
+  color: #66ffff;
+}
+
+body.gamified input[type="text"]:focus {
+  border-color: #6ff;
+  box-shadow: 0 0 16px #6ff;
+}
+
+/* Buttons */
+body:not(.gamified) button {
+  background-color: #4169a9; /* medium blue */
+  color: #f0f8ff; /* light text */
+  font-weight: 600;
+  box-shadow: 0 0 6px #7a9edc;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 16px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.4s ease, color 0.4s ease;
+}
+body:not(.gamified) button:hover {
+  background-color: #28527a;
+  color: #fff;
+}
+body.gamified button {
+  background-color: #00ffff;
+  color: #001a1a;
+  font-weight: 600;
+  border: none;
+  border-radius: 4px;
+  padding: 10px 16px;
+  font-size: 14px;
+  cursor: pointer;
+  box-shadow: 0 0 6px #00ffff;
+  transition: background-color 0.4s ease, box-shadow 0.4s ease, color 0.4s ease;
+  will-change: box-shadow, background-color;
+}
+body.gamified button:hover {
+  background-color: #33ffff;
+  box-shadow: 0 0 22px #33ffff;
+}
+
+/* Filters */
+#filters {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+.filter-btn {
+  background-color: #222;
+  color: #777;
+  padding: 8px 14px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+.filter-btn.active,
+.filter-btn:hover {
+  background-color: #555;
+  color: #eee;
+}
+body.gamified .filter-btn {
+  background-color: #0d2940;
+  color: #70e9ff;
+  box-shadow: 0 0 8px #0d2940;
+}
+body.gamified .filter-btn.active,
+body.gamified .filter-btn:hover {
+  background-color: #00ffff;
+  color: #001a1a;
+  box-shadow: 0 0 16px #00ffff;
+}
+
+/* Todo list */
+#todo-list {
+  list-style: none;
+  padding-left: 0;
+  max-height: 500px; /* bigger */
+  overflow-y: auto;
+  border-radius: 6px;
+  background: #1f2f43; /* richer blue for non-gamified */
+  box-shadow: inset 0 0 15px #3a5a8a; /* soft inner glow */
+  transition: background-color 1s ease, box-shadow 1s ease;
+}
+body:not(.gamified) #todo-list {
+  background: #1f2f43;
+  box-shadow: inset 0 0 15px #3a5a8a;
+}
+body.gamified #todo-list {
+  background: #1c004b;
+  box-shadow: inset 0 0 18px #30006e;
+}
+#todo-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 15px;
+  border-bottom: 1px solid transparent;
+  color: #dde6f0;
+  font-size: 15px;
+  transition: color 0.3s ease, background-color 0.3s ease, transform 0.2s ease;
+  cursor: grab;
+}
+body:not(.gamified) #todo-list li {
+  color: #dde6f0;
+  border-bottom-color: #2e3b4e;
+  background-color: transparent; /* remove dimming */
+}
+body.gamified #todo-list li {
+  color: #80ffff;
+  border-bottom-color: #3f0099;
+  background-color: rgba(0, 255, 255, 0.07); /* subtle highlight */
+}
+#todo-list li:hover:not(.completed) {
+  background-color: rgba(70, 110, 160, 0.3); /* softer hover in non-gamified */
+}
+#todo-list li.completed {
+  text-decoration: line-through;
+  opacity: 1; /* keep visible */
+  color: #9fb3c8; /* soften completed text */
+}
+body:not(.gamified) #todo-list li.completed {
+  color: #9fb3c8;
+}
+body.gamified #todo-list li.completed {
+  color: #4bbfff;
+}
+
+/* Delete button */
+#todo-list li button {
+  background: none;
+  border: none;
+  color: #b33;
+  cursor: pointer;
+  font-size: 18px;
+  padding: 0;
+  transition: color 0.3s ease, filter 0.3s ease;
+  filter: none; /* no glow */
+  text-shadow: none;
+  box-shadow: none;
+}
+body.gamified #todo-list li button {
+  color: #ff7b81;
+  filter: none; /* no glow */
+  text-shadow: none;
+  box-shadow: none;
+}
+#todo-list li button:hover {
+  color: #e06c75;
+}
+
+/* Toggle switch */
+.toggle-switch {
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  font-weight: 600;
+  user-select: none;
+  color: #d9e2ec;
+  transition: color 1s ease;
+}
+body.gamified .toggle-switch {
+  color: #a0f7ff;
+}
+.toggle-switch input[type="checkbox"] {
+  appearance: none;
+  width: 52px;
+  height: 28px;
+  background: #444;
+  border-radius: 50px;
+  position: relative;
+  cursor: pointer;
+  transition: all 0.4s ease;
+  box-shadow: inset 0 0 6px #222;
+}
+.toggle-switch input[type="checkbox"]::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 4px;
+  width: 20px;
+  height: 20px;
+  background: #aaa;
+  border-radius: 50%;
+  transition: all 0.4s ease;
+  box-shadow: 0 0 8px #888;
+  border: 1px solid #555;
+  transform: translateY(-50%);
+}
+/* Gamified toggle knob brightened */
+body.gamified .toggle-switch input[type="checkbox"]::before {
+  background-color: #0c0032; /* lighter knob base */
+  box-shadow: 0 0 12px #33bbff;
+  border: 1.5px solid #33ccff; /* bright border */
+  left: 4px;
+  top: 50%;
+  transition: all 0.4s ease;
+  transform: translateY(-50%);
+}
+body.gamified .toggle-switch input[type="checkbox"]:checked::before {
+  transform: translateX(24px) translateY(-50%);
+  background-color: #0c0032;
+  box-shadow: 0 0 20px #00ffff, 0 0 8px #00ffff;
+  border: 2px solid #66ffff; /* bright border */
+}
+
+.toggle-switch input[type="checkbox"]:checked {
+  background-color: #00ffff;
+  box-shadow: inset 0 0 10px #33eaff;
+}
+
+/* Bubbles */
+body:not(.gamified) .floating-dot {
+  display: none;
+}
+.floating-dot {
+  position: fixed;
+  border-radius: 50%;
+  background: rgba(0, 255, 255, 0.15);
+  pointer-events: none;
+  z-index: 1;
+  box-shadow: 0 0 8px rgba(0, 255, 255, 0.6);
+}
+
+/* Task content layout */
+.task-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  cursor: inherit;
+}
+
+/* Priority badges */
+.priority-badge {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 12px;
+  text-transform: uppercase;
+  user-select: none;
+  flex-shrink: 0;
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Priority colors - basic mode */
+body:not(.gamified) .priority-badge.low {
+  background-color: #82a3c9;
+  color: #142b47;
+}
+body:not(.gamified) .priority-badge.medium {
+  background-color: #a5badf;
+  color: #162f55;
+}
+body:not(.gamified) .priority-badge.high {
+  background-color: #c46a6a;
+  color: #fefefe;
+}
+
+/* Priority colors - gamified mode (neon) */
+body.gamified .priority-badge.low {
+  background-color: #3399ff;
+  color: #001a33;
+  box-shadow: 0 0 8px #3399ff;
+}
+body.gamified .priority-badge.medium {
+  background-color: #00ffff;
+  color: #001a1a;
+  box-shadow: 0 0 10px #00ffff;
+}
+body.gamified .priority-badge.high {
+  background-color: #ff3366;
+  color: #330012;
+  box-shadow: 0 0 14px #ff3366;
+}
+
+/* Due date styles */
+.due-date {
+  font-size: 13px;
+  color: #999;
+  user-select: none;
+  flex-shrink: 0;
+  padding-left: 6px;
+  border-left: 1px solid #444;
+}
+
+/* Overdue highlight */
+body.gamified .due-date.overdue {
+  color: #ff4466;
+  text-shadow: 0 0 6px #ff4466;
+}
+body.gamified #todo-list li.overdue-task {
+  background-color: rgba(255, 68, 102, 0.1);
+  box-shadow: 0 0 12px #ff4466 inset;
+  border-radius: 6px;
+}
+
+body:not(.gamified) .due-date.overdue {
+  color: #a33;
+  font-weight: 600;
+  border-left-color: #a33;
+}
+
+body:not(.gamified) #todo-list li.overdue-task {
+  background-color: rgba(163, 51, 51, 0.1);
+  border-radius: 6px;
+}
+
+/* Base styles - match other inputs */
+#priority-select {
+  background-color: #0e1b27; /* same as inputs */
+  color: #e4f1ff;
+  border: 1px solid #444;
+  border-radius: 6px; /* match input radius */
+  padding: 10px 12px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.4s ease, color 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease;
+  appearance: none; /* remove default arrow styling */
+}
+
+/* Focus state - match input focus */
+#priority-select:focus {
+  outline: none;
+  border-color: #999;
+  box-shadow: 0 0 8px #aaa;
+  background-color: #122537; /* slightly lighter background */
+  color: #fff;
+}
+
+/* Non-gamified mode */
+body:not(.gamified) #priority-select {
+  background-color: #0e1b27;
+  color: #e4f1ff;
+  border-color: #444;
+}
+
+body:not(.gamified) #priority-select.selected-priority {
+  background-color: #222;
+  color: #999;
+  border-color: #555;
+  cursor: default;
+}
+
+/* Gamified mode */
+body.gamified #priority-select {
+  background-color: #150045;
+  color: #b0f7ff;
+  border-color: #00ffff;
+  box-shadow: 0 0 10px #00ffff;
+}
+
+body.gamified #priority-select:focus {
+  background-color: #18005a;
+  border-color: #66ffff;
+  box-shadow: 0 0 16px #66ffff;
+  color: #e0ffff;
+}
+
+body.gamified #priority-select.selected-priority {
+  background-color: #13003a;
+  color: #66cfff;
+  box-shadow: inset 0 0 12px #00ffff;
+  cursor: default;
+}
+
+#todo-list li.dragging {
+  opacity: 0.5;
+  background-color: rgba(200, 200, 255, 0.1) !important;
+}
+
+#todo-list li.drag-over {
+  border-top: 2px dashed #00ffff;
+}
+
+body:not(.gamified) #todo-list li.drag-over {
+  border-top: 2px dashed #7a9edc;
+}
+
+#todo-list li:active {
+  cursor: grabbing;
+}
+
+#trash-can {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 60px;
+  height: 60px;
+  background: #555;
+  border-radius: 50%;
+  box-shadow: 0 0 10px rgba(0,0,0,0.5);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.3s ease, box-shadow 0.3s ease, background-color 0.4s ease;
+  z-index: 1000;
+  user-select: none;
+}
+
+#trash-can:hover {
+  transform: scale(1.15);
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+#trash-can::before {
+  content: "🗑️";
+  font-size: 30px;
+  color: white;
+}
+
+#trash-can.active {
+  transform: scale(1.2);
+  box-shadow: 0 0 20px 5px #f00;
+}
+
+#trash-can.dragover {
+  box-shadow: 0 0 30px 10px #f00;
+  transform: scale(1.3);
+}
+
+/* Gamified mode trash can */
+body.gamified #trash-can {
+  background: #0b004b;
+  box-shadow:
+    0 0 18px #00ffff,
+    inset 0 0 25px #0077a3;
+}
+
+body.gamified #trash-can:hover {
+  box-shadow:
+    0 0 24px #00ffff,
+    inset 0 0 18px #0077a3;
+  transform: scale(1.2);
+}
+
+body.gamified #trash-can::before {
+  content: "🗑️";
+  color: #00ffff;
+  text-shadow: 0 0 8px #00ffff;
+}
+
+body.gamified #trash-can.active {
+  box-shadow: 0 0 30px 10px #00ffff;
+  background: #190070;
+}
+
+body.gamified #trash-can.dragover {
+  box-shadow: 0 0 40px 15px #00ffff;
+  transform: scale(1.4);
+}
+
+/* Recover link styles (unified, no underline, no hover underline) */
+.recover-link {
+  color: #33ffff;  /* lighter cyan */
+  cursor: pointer;
+  margin-left: 10px;
+  user-select: none;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none; /* no underline */
+}
+
+.recover-link:hover {
+  text-decoration: underline;
+}
+
+/* Recycle view container */
+#recycle-view.recycle-box {
+  position: fixed;
+  bottom: 100px;
+  right: 20px;
+  width: 300px;
+  max-height: 400px;
+  overflow-y: auto;
+  background: #1c1c2b;
+  border: 1px solid #555;
+  border-radius: 12px;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.6);
+  color: #eee;
+  z-index: 1001;
+  transform: scale(0.9);
+  opacity: 0;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 20px; /* more spacing */
+  gap: 12px; /* if you want some spacing between children */
+}
+
+.recycle-row {
+  padding: 10px 0; /* increase vertical padding */
+}
+
+/* Open and closing animations */
+#recycle-view.recycle-box.open {
+  transform: scale(1);
+  opacity: 1;
+}
+
+#recycle-view.recycle-box.closing {
+  transform: scale(0.9);
+  opacity: 0;
+}
+
+/* Gamified recycle view style */
+body.gamified #recycle-view.recycle-box {
+  background: #140044;
+  border-color: #00ffff;
+  box-shadow:
+    0 0 25px #00ffff;
+  color: #a0f7ff;
+}
+
+/* Header of recycle box */
+.recycle-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+/* Empty message */
+.recycle-empty {
+  text-align: center;
+  margin: 10px 0;
+  font-size: 14px;
+  color: #aaa;
+  flex-grow: 1;
+}
+
+/* Each recycled task row */
+.recycle-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+  border-bottom: 1px solid #333;
+}
+
+body.gamified .recycle-row {
+  border-color: #0077a3;
+}
+
+/* Text content inside recycled item */
+.recycle-text {
+  flex: 1;
+  font-size: 15px;
+  color: #ddd;
+}
+
+/* Recover link next to each item */
+.recover-link {
+  color: #00f;
+  cursor: pointer;
+  margin-left: 10px;
+  user-select: none;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.recover-link:hover {
+  text-decoration: none;
+}
+
+/* Recycle bin footer note */
+.recycle-note {
+  font-size: 12px;
+  margin-top: 10px;
+  text-align: center;
+  color: #aaa;
+  user-select: none;
+  flex-shrink: 0;
+  padding-top: 8px;
+}
+
+.recycle-footer {
+  margin-top: 12px;
+  display: flex;
+  justify-content: center;
+}
+
+.recover-all-btn:hover:not(:disabled) {
+  background-color: #33ffff;
+  box-shadow: 0 0 14px #33ffff;
+}
+
+.recover-all-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+  pointer-events: none; /* Prevent hover and click */
+}
+
+.recycle-footer .recover-all-btn {
+  background-color: #00cccc;
+  color: #001a1a;
+  font-size: 14px;       /* smaller font */
+  padding: 6px 12px;     /* smaller padding */
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 0 8px #00cccc;
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.recycle-footer .recover-all-btn:hover {
+  background-color: #5588ff;
+}
+
+/* Gamified Recover All button */
+body.gamified .recycle-footer .recover-all-btn {
+  background-color: #00ffff;
+  color: #001a1a;
+  box-shadow: 0 0 12px #00ffff;
+}
+
+body.gamified .recycle-footer .recover-all-btn:hover {
+  background-color: #33ffff;
+}

@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>My Tools</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<script src="js/auth-check.js"></script>
+<body>
+  <div class="bubble-overlay"></div>
+
+  <main class="landing-content carousel-page">
+    <a href="account.html" class="account-icon" title="Account">
+        <img src="assets/account-icon.svg" alt="Account" />
+    </a>
+
+    <h1>Choose Your Tool</h1>
+
+    <div class="carousel-container">
+        <button class="nav-button nav-left" aria-label="Previous" disabled>&lt;</button>
+  
+        <div class="carousel" tabindex="0" aria-label="Tools Carousel">
+            <div class="card active" tabindex="0">
+                <div class="card-title">To-Do List Manager</div>
+                <p class="card-description">Organize tasks and boost productivity.</p>
+                <a class="cta-button" href="tools/todo.html">✨ Get in the zone</a>
+            </div>
+            <div class="card" tabindex="0">
+                <div class="card-title">Project Time Tracker</div>
+                <p class="card-description">Track time spent on projects and tasks.</p>
+                <a class="cta-button" href="tools/under-construction.html">🧠 Rewire My Tasks</a> <!-- tools/tracker.html -->
+            </div>
+            <div class="card" tabindex="0">
+                <div class="card-title">Content Calendar Builder</div>
+                <p class="card-description">Plan and schedule your content easily.</p>
+                <a class="cta-button" href="tools/under-construction.html">⏱️ Log My Time</a> <!-- tools/calendar.html -->
+            </div>
+            <div class="card" tabindex="0">
+                <div class="card-title">Content Repurposer</div>
+                <p class="card-description">Turn one idea into many content pieces.</p>
+                <a class="cta-button" href="tools/under-construction.html">📅 Master My Month</a> <!-- tools/repurpose.html -->
+            </div>
+            <div class="card" tabindex="0">
+                <div class="card-title">QuickCut Editor</div>
+                <p class="card-description">Edit faster. Publish smarter.</p>
+                <a class="cta-button" href="tools/quickcut.html">📹 Clip and Snip</a> <!-- tools/repurpose.html -->
+            </div>
+            <div class="card" tabindex="0">
+                <div class="card-title">Prompt Buddy</div>
+                <p class="card-description">Sparks your creativity with endless ideas.</p>
+                <a class="cta-button" href="tools/under-construction.html">🤓 Prompt me, Buddy!</a> <!-- tools/buddy.html -->
+            </div>
+            </div>
+
+        <button class="nav-button nav-right" aria-label="Next">&gt;</button>
+
+        <div class="dots" aria-label="Carousel Navigation Dots"></div>
+        </div>
+</main>
+
+    <script src="js/auth-check.js"></script>
+    <script src="js/carousel.js"></script>
+    <script src="js/bubbles.js"></script>
+</body>
+</html>

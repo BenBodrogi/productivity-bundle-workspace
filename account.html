@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>My Account</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body class="account-page">
+  <div class="bubble-overlay"></div>
+
+  <main class="landing-content">
+    <div id="account-container" role="main" aria-label="Account page">
+      <h1>Your Account</h1>
+        <div class="account-info" id="user-info">
+        <div class="info-block">
+            <p><strong>Full Name</strong></p>
+            <p id="username">Loading...</p>
+        </div>
+        
+        <div class="info-block">
+            <p><strong>Email</strong></p>
+            <p id="email">Loading...</p>
+        </div>
+        
+        <div class="info-block">
+            <p><strong>Purchase Date</strong></p>
+            <p id="purchase-date">Loading...</p>
+        </div>
+        </div>
+      <button id="logout-btn">Logout</button>
+      <div class="back-btn" id="back-to-tools">← Back to Tools</div>
+    </div>
+  </main>
+
+  <script src="js/account.js"></script>
+  <script src="js/bubbles.js"></script>
+</body>
+</html>

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>To-Do List Manager</title>
+  <link rel="stylesheet" href="tools-css/base.css" />
+  <link rel="stylesheet" href="tools-css/todo.css" />
+</head>
+<script src="js/auth-check.js"></script>
+<body>
+    <div class="account-icon" title="Account">
+        <a href="../account.html">
+            <img src="../assets/account-icon.svg" alt="Account" />
+        </a>
+    </div>
+  <!-- Background Layers -->
+  <div id="background-default"></div>
+  <div id="background-gamified"></div>
+
+  <div id="ui-container" role="main" aria-label="To-Do List Manager">
+    <h2>My To-Do List</h2>
+
+        <form id="todo-form" aria-label="Add a new task">
+        <input
+            type="text"
+            id="todo-input"
+            placeholder="Add a new task"
+            aria-required="true"
+            aria-describedby="input-help"
+            required
+        />
+
+            <select id="priority-select" required>
+            <option value="" disabled selected>Priority</option>
+            <option value="low">Low</option>
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+            </select>
+
+        <input type="date" id="due-date-input" aria-label="Due date" title="Due date" placeholder="Due Date" />
+
+        <button type="submit" aria-label="Add task">Add</button>
+        </form>
+
+    <div id="filters" role="group" aria-label="Filter tasks">
+      <button class="filter-btn active" data-filter="all" aria-pressed="true">All</button>
+      <button class="filter-btn" data-filter="active" aria-pressed="false">Active</button>
+      <button class="filter-btn" data-filter="completed" aria-pressed="false">Completed</button>
+      <button class="filter-btn" data-filter="sort-date" aria-pressed="false">Sort by Date</button>
+      <button class="filter-btn" data-filter="sort-priority" aria-pressed="false">Sort by Priority</button>
+
+    </div>
+
+    <ul id="todo-list" aria-live="polite" aria-relevant="additions removals"></ul>
+
+    <div class="toggle-switch">
+      <input type="checkbox" id="theme-toggle" aria-label="Toggle gamified mode" />
+      <label for="theme-toggle">Toggle Gamified Mode</label>
+    </div>
+    <div id="trash-can" aria-label="Recycle Bin" role="button" tabindex="0" title="Recycle Bin">
+      🗑️
+    </div>
+
+  </div>
+    <a href="../tools.html" class="back-menu-button" title="Back to Menu" aria-label="Back to menu">
+    ← Menu
+    </a>
+
+  <script src="tools-js/bubbles.js"></script>
+  <script type="module" src="tools-js/todo.js"></script>
+</body>
+</html>
