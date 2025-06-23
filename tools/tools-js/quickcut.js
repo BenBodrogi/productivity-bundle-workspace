@@ -2,8 +2,8 @@ import { createFFmpeg, fetchFile } from '../../libs/ffmpeg.min.js';
 
 const ffmpeg = createFFmpeg({
   log: true,
-  corePath: '/libs/ffmpeg-core.js',
-  wasmPath: '/libs/ffmpeg-core.wasm',
+  corePath: '../../libs/ffmpeg-core.js',
+  wasmPath: '../../libs/ffmpeg-core.wasm',
   memorySize: 2 * 1024 * 1024 * 1024, // 2GB memory
 });
 
