@@ -23,7 +23,7 @@
         <input type="number" id="endTime" min="0" value="10" />
       </label>
 
-      <label>
+      <label class="checkbox-label">
         <input type="checkbox" id="muteAudio" /> Mute Audio
       </label>
 
@@ -33,7 +33,6 @@
         <option value="2560:1440">1440p (2560x1440)</option>
         <option value="1920:1080">1080p (1920x1080)</option>
         <option value="1280:720">720p (1280x720)</option>
-        <option value="854:480">480p (854x480)</option>
       </select>
 
       <label for="qualitySelect">Quality Preset:</label>
@@ -57,10 +56,15 @@
       </select>
     </form>
 
-    <button id="exportBtn">📤 Export to MP4</button>
+    <div id="durationInfo"></div>
 
-    <progress id="progressBar" value="0" max="100" style="display:none;"></progress>
-    <div id="progressText" style="display:none;"></div>
+    <div class="button-row">
+      <button id="exportBtn">📤 Export to MP4</button>
+      <button id="cancelBtn" disabled>✖ Cancel</button>
+    </div>
+
+    <progress id="progressBar" value="0" max="100"></progress>
+    <div id="progressText"></div>
   </section>
 </body>
 </html>

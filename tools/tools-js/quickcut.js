@@ -16,14 +16,17 @@ const startTimeInput = document.getElementById('startTime');
 const endTimeInput = document.getElementById('endTime');
 const muteAudioCheckbox = document.getElementById('muteAudio');
 const exportBtn = document.getElementById('exportBtn');
+const cancelBtn = document.getElementById('cancelBtn');
 const progressBar = document.getElementById('progressBar');
 const progressText = document.getElementById('progressText');
+const durationInfo = document.getElementById('durationInfo');
 
 const resolutionSelect = document.getElementById('resolutionSelect');
 const qualitySelect = document.getElementById('qualitySelect');
 const audioBitrateSelect = document.getElementById('audioBitrateSelect');
 
 let videoFile;
+let isCancelled = false;
 
 videoInput.addEventListener('change', () => {
   const file = videoInput.files[0];
@@ -34,14 +37,24 @@ videoInput.addEventListener('change', () => {
   videoPreview.load();
 
   videoPreview.onloadedmetadata = () => {
-    endTimeInput.value = Math.floor(videoPreview.duration);
+    const duration = Math.floor(videoPreview.duration);
+    endTimeInput.value = duration;
     startTimeInput.value = 0;
+    durationInfo.textContent = `Video Duration: ${duration} seconds`;
   };
 });
 
-// Disable audio bitrate selector if muted
 muteAudioCheckbox.addEventListener('change', () => {
   audioBitrateSelect.disabled = muteAudioCheckbox.checked;
+});
+
+cancelBtn.addEventListener('click', () => {
+  if (!isCancelled) {
+    isCancelled = true;
+    progressText.textContent = 'Cancelling... Please wait.';
+    exportBtn.disabled = false;
+    cancelBtn.disabled = true;
+  }
 });
 
 exportBtn.addEventListener('click', async () => {
@@ -54,7 +67,7 @@ exportBtn.addEventListener('click', async () => {
   const end = parseFloat(endTimeInput.value);
   const mute = muteAudioCheckbox.checked;
   const resolution = resolutionSelect.value;
-  const [preset, crf] = qualitySelect.value.split('-');
+  const quality = qualitySelect.value; // format: "preset-crf"
   const audioBitrate = audioBitrateSelect.value;
 
   if (isNaN(start) || isNaN(end) || start >= end) {
@@ -62,7 +75,9 @@ exportBtn.addEventListener('click', async () => {
     return;
   }
 
+  isCancelled = false;
   exportBtn.disabled = true;
+  cancelBtn.disabled = false;
   exportBtn.textContent = 'Processing...';
 
   progressBar.style.display = 'block';
@@ -78,6 +93,8 @@ exportBtn.addEventListener('click', async () => {
     ffmpeg.FS('writeFile', 'input.mp4', await fetchFile(videoFile));
 
     const duration = end - start;
+    const [preset, crf] = quality.split('-');
+
     const args = [
       '-ss', `${start}`,
       '-t', `${duration}`,
@@ -87,14 +104,12 @@ exportBtn.addEventListener('click', async () => {
       '-crf', crf,
     ];
 
-    if (/^\d+:\d+$/.test(resolution)) {
-      args.push('-vf', `scale=${resolution}`);
-    } else {
-      console.warn('Invalid resolution format, skipping scale filter.');
-    }
-
     if (resolution !== 'original') {
-      args.push('-vf', `scale=${resolution}`);
+      if (/^\d+:\d+$/.test(resolution)) {
+        args.push('-vf', `scale=${resolution}`);
+      } else {
+        console.warn('Invalid resolution format, skipping scale filter.');
+      }
     }
 
     if (mute) {
@@ -107,12 +122,27 @@ exportBtn.addEventListener('click', async () => {
     args.push('output.mp4');
 
     ffmpeg.setProgress(({ ratio }) => {
+      if (isCancelled) {
+        // Terminate ffmpeg safely:
+        ffmpeg.exit();
+        return;
+      }
       const percent = Math.round(ratio * 100);
       progressBar.value = percent;
-      progressText.textContent = `Exporting: ${percent}%`;
+      progressText.textContent = `Processing: ${percent}%`;
     });
 
     await ffmpeg.run(...args);
+
+    if (isCancelled) {
+      progressText.textContent = 'Cancelled.';
+      progressBar.style.display = 'none';
+      progressText.style.display = 'none';
+      cancelBtn.disabled = true;
+      exportBtn.disabled = false;
+      exportBtn.textContent = '📤 Export to MP4';
+      return;
+    }
 
     progressText.textContent = 'Export complete! Preparing download...';
     progressBar.value = 100;
@@ -128,15 +158,19 @@ exportBtn.addEventListener('click', async () => {
     a.remove();
 
     URL.revokeObjectURL(url);
-
   } catch (e) {
-    console.error('Error during video processing:', e);
-    alert('Error during video processing: ' + e.message);
+    if (isCancelled) {
+      console.log('Export cancelled by user.');
+    } else {
+      console.error('Error during video processing:', e);
+      alert('Error during video processing: ' + e.message);
+    }
   }
 
+  // Reset UI states
   progressBar.style.display = 'none';
   progressText.style.display = 'none';
-
   exportBtn.disabled = false;
   exportBtn.textContent = '📤 Export to MP4';
+  cancelBtn.disabled = true;
 });

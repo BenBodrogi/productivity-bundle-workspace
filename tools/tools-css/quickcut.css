@@ -37,10 +37,17 @@ video {
   border-radius: 6px;
 }
 
+video {
+  border-radius: 8px;
+  width: 100%;
+  margin-top: 10px;
+}
+
 form {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  margin-top: 15px;
 }
 
 label {
@@ -57,47 +64,107 @@ input[type="number"] {
   box-sizing: border-box;
 }
 
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 input[type="checkbox"] {
   margin-right: 6px;
   vertical-align: middle;
   transform: scale(1.2);
 }
 
+#durationInfo {
+  margin-top: 12px;
+  font-size: 14px;
+  color: #ccc;
+}
+
+/* Buttons container */
+.button-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+/* Buttons common style */
 button {
-  padding: 12px 16px;
+  padding: 12px 18px;
   font-size: 16px;
   border: none;
   border-radius: 6px;
-  background-color: #7b5deb;
-  color: white;
   font-weight: 600;
   cursor: pointer;
   transition: background-color 0.3s ease;
   user-select: none;
+  flex: 1;
 }
 
-button:hover:not(:disabled) {
+#exportBtn {
+  background-color: #7b5deb;
+  color: white;
+}
+
+#exportBtn:hover:not(:disabled) {
   background-color: #6139c6;
 }
 
-button:disabled {
+#exportBtn:disabled {
   background-color: #444;
   cursor: not-allowed;
 }
 
-/* Progress bar styling */
-#progressBar {
-  width: 100%;
-  height: 20px;
-  margin-top: 15px;
-  display: none; /* hidden by default */
+#cancelBtn {
+  background-color: #cc4b5c;
+  color: white;
 }
 
-/* Progress text styling */
+#cancelBtn:hover:not(:disabled) {
+  background-color: #a13d46;
+}
+
+#cancelBtn:disabled {
+  background-color: #663333;
+  cursor: not-allowed;
+}
+
+/* Progress bar with gradient and smooth transition */
+#progressBar {
+  background: #444;
+  border: 1px solid #333;
+  overflow: hidden;
+  appearance: none;
+  -webkit-appearance: none;
+  border-radius: 8px;
+  height: 24px;
+  transition: background-color 0.3s ease;
+  width: 100%;
+  margin-top: 15px;
+  display: none;
+}
+
+#progressBar::-webkit-progress-bar {
+  background-color: #222;
+  border-radius: 8px;
+}
+
+#progressBar::-webkit-progress-value {
+  background: linear-gradient(90deg, #7b5deb, #6139c6);
+  border-radius: 8px;
+  transition: width 0.3s ease;
+}
+
+#progressBar::-moz-progress-bar {
+  background: linear-gradient(90deg, #7b5deb, #6139c6);
+  border-radius: 8px;
+  transition: width 0.3s ease;
+}
+
 #progressText {
-  text-align: center;
-  margin-top: 6px;
-  font-size: 14px;
-  color: #555;
-  display: none; /* hidden by default */
+  display: none;
+  margin-top: 10px;
+  font-weight: 600;
+  color: #7b5deb;
 }
