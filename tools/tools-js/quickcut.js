@@ -54,11 +54,11 @@ exportBtn.addEventListener('click', async () => {
   exportBtn.disabled = true;
   exportBtn.textContent = 'Processing...';
 
-  // Show and reset progress UI
+  // Show progress bar and reset
   progressBar.style.display = 'block';
   progressBar.value = 0;
   progressText.style.display = 'block';
-  progressText.textContent = 'Starting...';
+  progressText.textContent = 'Loading FFmpeg...';
 
   try {
     if (!ffmpeg.isLoaded()) {
@@ -79,7 +79,7 @@ exportBtn.addEventListener('click', async () => {
       'output.mp4',
     ];
 
-    // Track progress with ffmpeg.setProgress
+    // Set progress handler for processing stage
     ffmpeg.setProgress(({ ratio }) => {
       const percent = Math.round(ratio * 100);
       progressBar.value = percent;
@@ -87,6 +87,10 @@ exportBtn.addEventListener('click', async () => {
     });
 
     await ffmpeg.run(...args);
+
+    // After processing finished
+    progressText.textContent = 'Exporting file...';
+    progressBar.value = 100;
 
     const data = ffmpeg.FS('readFile', 'output.mp4');
     const url = URL.createObjectURL(new Blob([data.buffer], { type: 'video/mp4' }));
