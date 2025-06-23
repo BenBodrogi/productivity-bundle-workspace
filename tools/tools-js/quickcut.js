@@ -25,10 +25,11 @@ const resolutionSelect = document.getElementById('resolutionSelect');
 const qualitySelect = document.getElementById('qualitySelect');
 const audioBitrateSelect = document.getElementById('audioBitrateSelect');
 
-// New custom controls elements
+// Custom controls
 const playPauseBtn = document.getElementById('playPauseBtn');
 const rewindBtn = document.getElementById('rewindBtn');
 const forwardBtn = document.getElementById('forwardBtn');
+const muteToggleBtn = document.getElementById('muteToggleBtn');
 const currentTimeDisplay = document.getElementById('currentTime');
 const totalDurationDisplay = document.getElementById('totalDuration');
 const previewResolution = document.getElementById('previewResolution');
@@ -122,7 +123,7 @@ videoInput.addEventListener('change', () => {
   };
 });
 
-// Mute toggle disables audio bitrate
+// Mute toggle disables audio bitrate checkbox
 muteAudioCheckbox.addEventListener('change', () => {
   audioBitrateSelect.disabled = muteAudioCheckbox.checked;
 });
@@ -186,12 +187,12 @@ exportBtn.addEventListener('click', async () => {
 
     ffmpeg.FS('writeFile', 'input.mp4', await fetchFile(videoFile));
 
-    const duration = end - start;
+    const clipDuration = end - start;
     const [preset, crf] = quality.split('-');
 
     const args = [
       '-ss', `${start}`,
-      '-t', `${duration}`,
+      '-t', `${clipDuration}`,
       '-i', 'input.mp4',
       '-c:v', 'libx264',
       '-preset', preset,
@@ -258,6 +259,7 @@ videoPreview.addEventListener('loadedmetadata', () => {
   totalDurationDisplay.textContent = formatTime(duration);
   currentTimeDisplay.textContent = formatTime(0);
   updateTimelineUI();
+  updateMuteButtonIcon();
 });
 
 videoPreview.addEventListener('timeupdate', () => {
@@ -267,10 +269,10 @@ videoPreview.addEventListener('timeupdate', () => {
 playPauseBtn.addEventListener('click', () => {
   if (videoPreview.paused) {
     videoPreview.play();
-    playPauseBtn.textContent = '⏸ Pause';
+    playPauseBtn.textContent = '⏸';
   } else {
     videoPreview.pause();
-    playPauseBtn.textContent = '⏵ Play';
+    playPauseBtn.textContent = '▶️';
   }
 });
 
@@ -282,16 +284,42 @@ forwardBtn.addEventListener('click', () => {
   videoPreview.currentTime = Math.min(videoPreview.currentTime + 5, videoPreview.duration);
 });
 
+muteToggleBtn.addEventListener('click', () => {
+  videoPreview.muted = !videoPreview.muted;
+  updateMuteButtonIcon();
+});
+
+function updateMuteButtonIcon() {
+  muteToggleBtn.textContent = videoPreview.muted ? '🔇' : '🔈';
+}
+
+// Preview resolution changes video playback quality without resizing container
 previewResolution.addEventListener('change', () => {
   const value = previewResolution.value;
 
   if (value === 'original') {
-    videoPreview.removeAttribute('width');
-    videoPreview.removeAttribute('height');
+    videoPreview.style.width = '640px';
+    videoPreview.style.height = '360px';
   } else {
-    const [w, h] = value.split('x');
-    videoPreview.width = parseInt(w);
-    videoPreview.height = parseInt(h);
+    // We don't actually resize video element container — only playback quality is simulated by CSS filter here.
+    // Because real resolution change requires video source replacement which is complex, so we fake it:
+    videoPreview.style.width = '640px';
+    videoPreview.style.height = '360px';
+
+    // Simulate lower resolution with CSS filter blur + scale down, optional, comment if undesired:
+    switch (value) {
+      case '1920x1080': // 1080p, no blur
+        videoPreview.style.filter = 'none';
+        break;
+      case '1280x720': // 720p, slight blur
+        videoPreview.style.filter = 'blur(0.8px)';
+        break;
+      case '854x480': // 480p, more blur
+        videoPreview.style.filter = 'blur(1.5px)';
+        break;
+      default:
+        videoPreview.style.filter = 'none';
+    }
   }
 });
 

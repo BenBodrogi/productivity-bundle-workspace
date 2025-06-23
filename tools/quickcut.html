@@ -9,93 +9,95 @@
 </head>
 <body>
   <div class="editor-wrapper">
-    <aside class="sidebar">
-      <h2>🎬 QuickCut</h2>
-      <input type="file" id="videoInput" accept="video/*" />
-      <div class="duration" id="durationInfo"></div>
+    <div class="top-container">
+      <aside class="sidebar">
+        <h2>🎬 QuickCut</h2>
+        <input type="file" id="videoInput" accept="video/*" />
+        <div class="duration" id="durationInfo"></div>
 
-      <details class="export-settings" open>
-        <summary>⚙️ Export Settings</summary>
+        <details class="export-settings" open>
+          <summary>⚙️ Export Settings</summary>
 
-        <label for="resolutionSelect">Resolution:</label>
-        <select id="resolutionSelect">
-          <option value="original">Original</option>
-          <option value="2560:1440">1440p</option>
-          <option value="1920:1080">1080p</option>
-          <option value="1280:720">720p</option>
-        </select>
-
-        <label for="qualitySelect">Quality:</label>
-        <select id="qualitySelect">
-          <option value="ultrafast-28">Ultra Fast</option>
-          <option value="superfast-26">Super Fast</option>
-          <option value="veryfast-24">Very Fast</option>
-          <option value="fast-22">Fast</option>
-          <option value="medium-23" selected>Balanced</option>
-          <option value="slow-18">Slow</option>
-          <option value="veryslow-15">Very Slow</option>
-        </select>
-
-        <label for="audioBitrateSelect">Audio Bitrate:</label>
-        <select id="audioBitrateSelect" disabled>
-          <option value="64000">64 kbps</option>
-          <option value="96000">96 kbps</option>
-          <option value="128000" selected>128 kbps</option>
-          <option value="192000">192 kbps</option>
-          <option value="256000">256 kbps</option>
-        </select>
-
-        <label class="checkbox-label">
-          <input type="checkbox" id="muteAudio" /> Mute Audio
-        </label>
-      </details>
-
-      <div class="button-row">
-        <button id="exportBtn">📤 Export</button>
-        <button id="cancelBtn" disabled>✖ Cancel</button>
-      </div>
-
-      <progress id="progressBar" value="0" max="100"></progress>
-      <div id="progressText"></div>
-    </aside>
-
-    <main class="video-area">
-      <div class="video-container">
-        <video id="videoPreview"></video>
-      </div>
-
-      <div class="video-controls">
-        <button id="rewindBtn" title="Rewind 5 seconds">⏪</button>
-        <button id="playPauseBtn" title="Play/Pause">▶️</button>
-        <button id="forwardBtn" title="Forward 5 seconds">⏩</button>
-        <button id="muteToggleBtn" title="Mute/Unmute">🔈</button>
-
-        <span id="currentTime">0:00</span> / <span id="totalDuration">0:00</span>
-
-        <label class="preview-resolution-label">
-          Preview Resolution:
-          <select id="previewResolution">
+          <label for="resolutionSelect">Resolution:</label>
+          <select id="resolutionSelect">
             <option value="original">Original</option>
-            <option value="1920x1080">1080p</option>
-            <option value="1280x720">720p</option>
-            <option value="854x480">480p</option>
+            <option value="2560:1440">1440p</option>
+            <option value="1920:1080">1080p</option>
+            <option value="1280:720">720p</option>
           </select>
-        </label>
-      </div>
 
-      <div class="timeline-container">
-        <div class="timeline-track">
-          <div class="timeline-fill"></div>
-          <div class="handle handle-start" draggable="true" title="Set start time"></div>
-          <div class="handle handle-end" draggable="true" title="Set end time"></div>
+          <label for="qualitySelect">Quality:</label>
+          <select id="qualitySelect">
+            <option value="ultrafast-28">Ultra Fast</option>
+            <option value="superfast-26">Super Fast</option>
+            <option value="veryfast-24">Very Fast</option>
+            <option value="fast-22">Fast</option>
+            <option value="medium-23" selected>Balanced</option>
+            <option value="slow-18">Slow</option>
+            <option value="veryslow-15">Very Slow</option>
+          </select>
+
+          <label for="audioBitrateSelect">Audio Bitrate:</label>
+          <select id="audioBitrateSelect" disabled>
+            <option value="64000">64 kbps</option>
+            <option value="96000">96 kbps</option>
+            <option value="128000" selected>128 kbps</option>
+            <option value="192000">192 kbps</option>
+            <option value="256000">256 kbps</option>
+          </select>
+
+          <label class="checkbox-label">
+            <input type="checkbox" id="muteAudio" /> Mute Audio
+          </label>
+        </details>
+
+        <div class="button-row">
+          <button id="exportBtn">📤 Export</button>
+          <button id="cancelBtn" disabled>✖ Cancel</button>
         </div>
+
+        <progress id="progressBar" value="0" max="100"></progress>
+        <div id="progressText"></div>
+      </aside>
+
+      <main class="video-area">
+        <div class="video-container">
+          <video id="videoPreview" muted></video>
+        </div>
+
+        <div class="video-controls">
+          <button id="rewindBtn" title="Rewind 5 seconds">⏪</button>
+          <button id="playPauseBtn" title="Play/Pause">▶️</button>
+          <button id="forwardBtn" title="Forward 5 seconds">⏩</button>
+          <button id="muteToggleBtn" title="Mute/Unmute">🔈</button>
+
+          <span id="currentTime">0:00</span> / <span id="totalDuration">0:00</span>
+
+          <label class="preview-resolution-label">
+            Preview Resolution:
+            <select id="previewResolution">
+              <option value="original">Original</option>
+              <option value="1920x1080">1080p</option>
+              <option value="1280x720">720p</option>
+              <option value="854x480">480p</option>
+            </select>
+          </label>
+        </div>
+      </main>
+    </div>
+
+    <div class="timeline-container">
+      <div class="timeline-track">
+        <div class="timeline-fill"></div>
+        <div class="handle handle-start" draggable="true" title="Set start time"></div>
+        <div class="handle handle-end" draggable="true" title="Set end time"></div>
       </div>
 
       <div class="timeline-bar">
         <label>Start (sec): <input type="number" id="startTime" min="0" value="0" step="0.1" /></label>
         <label>End (sec): <input type="number" id="endTime" min="0" value="10" step="0.1" /></label>
       </div>
-    </main>
+    </div>
   </div>
 </body>
 </html>
