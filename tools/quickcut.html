@@ -5,7 +5,6 @@
   <title>QuickCut</title>
   <link rel="stylesheet" href="tools-css/quickcut.css" />
   <script src="../libs/ffmpeg.min.js"></script>
-  <script type="module" src="tools-js/quickcut.js"></script>
 </head>
 <body>
   <div class="editor-wrapper">
@@ -90,7 +89,6 @@
         <input type="range" id="videoProgress" min="0" max="100" step="0.1" value="0" title="Video progress" />
       </main>
     </div>
-
     <div class="timeline-container">
       <div class="timeline-track">
         <div class="timeline-fill"></div>
@@ -104,5 +102,6 @@
       </div>
     </div>
   </div>
+  <script type="module" src="tools-js/quickcut.js"></script>
 </body>
 </html>

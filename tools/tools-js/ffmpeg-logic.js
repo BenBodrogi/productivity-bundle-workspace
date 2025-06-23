@@ -1,5 +1,3 @@
-import { createFFmpeg, fetchFile } from '../../libs/ffmpeg.min.js';
-
 let ffmpeg = createFFmpeg({
   log: true,
   corePath: '../../libs/ffmpeg-core.js',
