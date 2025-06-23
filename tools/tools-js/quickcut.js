@@ -1,9 +1,9 @@
-import { createFFmpeg, fetchFile } from '../../libs/ffmpeg.min.js';
+const { createFFmpeg, fetchFile } = FFmpeg;
 
 const ffmpeg = createFFmpeg({
   log: true,
-  corePath: '../../libs/ffmpeg-core.js',
-  wasmPath: '../../libs/ffmpeg-core.wasm',
+  corePath: '/libs/ffmpeg-core.js',
+  wasmPath: '/libs/ffmpeg-core.wasm',
   memorySize: 2 * 1024 * 1024 * 1024, // 2GB memory
 });
 
@@ -55,12 +55,9 @@ exportBtn.addEventListener('click', async () => {
       console.log('ffmpeg core loaded.');
     }
 
-    // Write input video file to ffmpeg FS
     ffmpeg.FS('writeFile', 'input.mp4', await fetchFile(videoFile));
 
     const duration = end - start;
-
-    // FFmpeg args for cutting with copy codec, optional mute
     const args = [
       '-ss', `${start}`,
       '-t', `${duration}`,
