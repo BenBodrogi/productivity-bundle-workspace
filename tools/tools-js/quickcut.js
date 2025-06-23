@@ -1,5 +1,5 @@
-import { processExport, cancelProcessing } from './ffmpeg-logic.js'; 
-
+// quickcut.js
+import { processExport, cancelProcessing } from './ffmpeg-logic.js';
 
 const videoInput = document.getElementById('videoInput');
 const videoPreview = document.getElementById('videoPreview');
@@ -71,6 +71,14 @@ function percentToTime(percent) {
   return (percent / 100) * videoPreview.duration;
 }
 
+function resetUI() {
+  progressBar.style.display = 'none';
+  progressText.style.display = 'none';
+  exportBtn.disabled = false;
+  cancelBtn.disabled = true;
+  exportBtn.textContent = '📤 Export';
+}
+
 // ---------------------------------
 // Video loading
 
@@ -97,8 +105,7 @@ videoInput.addEventListener('change', () => {
 });
 
 // ---------------------------------
-// Export and cancel buttons are no longer functional here
-// You can implement export logic in your ffmpeg-logic.js
+// Export button and cancel logic
 
 exportBtn.addEventListener('click', async () => {
   if (!videoFile) {
@@ -145,7 +152,6 @@ exportBtn.addEventListener('click', async () => {
         progressText.textContent = 'Export complete! Preparing download...';
         progressBar.value = 100;
 
-        // Trigger download
         const a = document.createElement('a');
         a.href = blobUrl;
         a.download = 'quickcut_output.mp4';
@@ -182,7 +188,7 @@ cancelBtn.addEventListener('click', async () => {
 });
 
 // ---------------------------------
-// PLAY/PAUSE toggle
+// PLAY/PAUSE button
 
 playPauseBtn.addEventListener('click', () => {
   if (videoPreview.paused) {
@@ -254,8 +260,6 @@ videoPreview.addEventListener('timeupdate', () => {
   }
 });
 
-// Use pointer events for slider dragging
-
 videoProgress.addEventListener('pointerdown', () => {
   isDraggingVideoProgress = true;
 });
@@ -274,7 +278,7 @@ videoProgress.addEventListener('pointerleave', () => {
 });
 
 // ---------------------------------
-// Preview resolution select changes
+// Preview resolution selector
 
 previewResolution.addEventListener('change', () => {
   const val = previewResolution.value;
@@ -299,7 +303,7 @@ previewResolution.addEventListener('change', () => {
       videoPreview.removeAttribute('width');
       videoPreview.removeAttribute('height');
   }
-  videoPreview.style.filter = 'none'; // remove any blur if present
+  videoPreview.style.filter = 'none';
 });
 
 // ---------------------------------
@@ -350,7 +354,6 @@ function onHandleDrag(e, handle) {
   percent = clamp(percent, 0, 100);
 
   if (handle === handleStart) {
-    // Prevent crossing over end
     const endPercent = parseFloat(handleEnd.style.left);
     if (percent > endPercent) percent = endPercent;
     handle.style.left = percent + '%';
@@ -358,7 +361,6 @@ function onHandleDrag(e, handle) {
     const newStartTime = percentToTime(percent);
     startTimeInput.value = formatTime(newStartTime);
   } else if (handle === handleEnd) {
-    // Prevent crossing over start
     const startPercent = parseFloat(handleStart.style.left);
     if (percent < startPercent) percent = startPercent;
     handle.style.left = percent + '%';
