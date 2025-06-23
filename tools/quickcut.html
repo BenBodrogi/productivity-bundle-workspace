@@ -26,12 +26,36 @@
       <label>
         <input type="checkbox" id="muteAudio" /> Mute Audio
       </label>
+
+      <label for="resolutionSelect">Output Resolution:</label>
+      <select id="resolutionSelect">
+        <option value="original">Original</option>
+        <option value="1920:1080">1080p (1920x1080)</option>
+        <option value="1280:720">720p (1280x720)</option>
+        <option value="854:480">480p (854x480)</option>
+      </select>
+
+      <label for="qualitySelect">Quality Preset:</label>
+      <select id="qualitySelect">
+        <option value="ultrafast-28">Fast (CRF 28, ultrafast)</option>
+        <option value="medium-23" selected>Balanced (CRF 23, medium)</option>
+        <option value="slow-18">High Quality (CRF 18, slow)</option>
+      </select>
+
+      <label for="audioBitrateSelect">Audio Bitrate:</label>
+      <select id="audioBitrateSelect" disabled>
+        <option value="64000">64 kbps</option>
+        <option value="96000">96 kbps</option>
+        <option value="128000" selected>128 kbps</option>
+        <option value="192000">192 kbps</option>
+        <option value="256000">256 kbps</option>
+      </select>
     </form>
 
     <button id="exportBtn">📤 Export to MP4</button>
 
-    <progress id="progressBar" value="0" max="100"></progress>
-    <div id="progressText"></div>
+    <progress id="progressBar" value="0" max="100" style="display:none;"></progress>
+    <div id="progressText" style="display:none;"></div>
   </section>
 </body>
 </html>

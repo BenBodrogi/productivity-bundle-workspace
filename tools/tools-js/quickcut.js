@@ -6,7 +6,6 @@ const ffmpeg = createFFmpeg({
   wasmPath: '../../libs/ffmpeg-core.wasm',
   memorySize: 2 * 1024 * 1024 * 1024,
   logger: ({ type, message }) => {
-    // Optional: Keep console log for debugging
     console.log(`[${type}] ${message}`);
   },
 });
@@ -19,6 +18,10 @@ const muteAudioCheckbox = document.getElementById('muteAudio');
 const exportBtn = document.getElementById('exportBtn');
 const progressBar = document.getElementById('progressBar');
 const progressText = document.getElementById('progressText');
+
+const resolutionSelect = document.getElementById('resolutionSelect');
+const qualitySelect = document.getElementById('qualitySelect');
+const audioBitrateSelect = document.getElementById('audioBitrateSelect');
 
 let videoFile;
 
@@ -36,6 +39,10 @@ videoInput.addEventListener('change', () => {
   };
 });
 
+muteAudioCheckbox.addEventListener('change', () => {
+  audioBitrateSelect.disabled = muteAudioCheckbox.checked;
+});
+
 exportBtn.addEventListener('click', async () => {
   if (!videoFile) {
     alert('Please upload a video first!');
@@ -45,6 +52,9 @@ exportBtn.addEventListener('click', async () => {
   const start = parseFloat(startTimeInput.value);
   const end = parseFloat(endTimeInput.value);
   const mute = muteAudioCheckbox.checked;
+  const resolution = resolutionSelect.value;
+  const quality = qualitySelect.value; // format: "preset-crf"
+  const audioBitrate = audioBitrateSelect.value;
 
   if (isNaN(start) || isNaN(end) || start >= end) {
     alert('Please enter valid start and end times, where start < end.');
@@ -54,7 +64,6 @@ exportBtn.addEventListener('click', async () => {
   exportBtn.disabled = true;
   exportBtn.textContent = 'Processing...';
 
-  // Show progress bar and reset
   progressBar.style.display = 'block';
   progressBar.value = 0;
   progressText.style.display = 'block';
@@ -68,28 +77,39 @@ exportBtn.addEventListener('click', async () => {
     ffmpeg.FS('writeFile', 'input.mp4', await fetchFile(videoFile));
 
     const duration = end - start;
+    const [preset, crf] = quality.split('-');
+
     const args = [
       '-ss', `${start}`,
       '-t', `${duration}`,
       '-i', 'input.mp4',
       '-c:v', 'libx264',
-      '-preset', 'ultrafast',
-      '-crf', '23',
-      ...(mute ? ['-an'] : ['-c:a', 'aac']),
-      'output.mp4',
+      '-preset', preset,
+      '-crf', crf,
     ];
 
-    // Set progress handler for processing stage
+    if (resolution !== 'original') {
+      args.push('-vf', `scale=${resolution}`);
+    }
+
+    if (mute) {
+      args.push('-an');
+    } else {
+      args.push('-c:a', 'aac');
+      args.push('-b:a', audioBitrate);
+    }
+
+    args.push('output.mp4');
+
     ffmpeg.setProgress(({ ratio }) => {
       const percent = Math.round(ratio * 100);
       progressBar.value = percent;
-      progressText.textContent = `Processing: ${percent}%`;
+      progressText.textContent = `Exporting: ${percent}%`;
     });
 
     await ffmpeg.run(...args);
 
-    // After processing finished
-    progressText.textContent = 'Exporting file...';
+    progressText.textContent = 'Export complete! Preparing download...';
     progressBar.value = 100;
 
     const data = ffmpeg.FS('readFile', 'output.mp4');
@@ -109,7 +129,6 @@ exportBtn.addEventListener('click', async () => {
     alert('Error during video processing: ' + e.message);
   }
 
-  // Hide progress bar/text and re-enable button
   progressBar.style.display = 'none';
   progressText.style.display = 'none';
 
