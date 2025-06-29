@@ -341,3 +341,84 @@ select:focus {
   outline: 2px solid #7b5deb;
   outline-offset: 2px;
 }
+
+/* ------------------- */
+/* Export Settings Modal */
+/* ------------------- */
+
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+  opacity: 1;
+  transition: opacity 0.2s ease;
+}
+
+.modal.hidden {
+  display: none;
+}
+
+.modal-content {
+  background: #1a1a1a;
+  padding: 30px;
+  border-radius: 10px;
+  box-shadow: 0 0 10px #000;
+  width: 320px;
+  max-width: 90%;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  box-sizing: border-box;
+}
+
+.modal-content h3 {
+  margin: 0 0 10px;
+  font-size: 20px;
+  text-align: center;
+  color: #fff;
+}
+
+.modal-content label {
+  font-size: 14px;
+  margin-bottom: 4px;
+  color: #ccc;
+}
+
+.modal-content select {
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid #555;
+  background-color: #111;
+  color: #fff;
+}
+
+.modal-buttons {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.modal-buttons button {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  border-radius: 6px;
+  background-color: #7b5deb;
+  color: #fff;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s ease;
+}
+
+.modal-buttons button:hover {
+  background-color: #6139c6;
+}
