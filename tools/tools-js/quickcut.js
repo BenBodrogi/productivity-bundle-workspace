@@ -375,4 +375,86 @@ volumeSlider.addEventListener('input', () => {
 });
 videoPreview.volume = volumeSlider.value;
 
+// Grab elements related to export modal
+const openExportModalBtn = document.getElementById('openExportModalBtn');
+const exportModal = document.getElementById('exportModal');
+const closeExportModalBtn = document.getElementById('closeExportModalBtn');
+const confirmExportBtn = document.getElementById('confirmExportBtn');
+
+// Open export modal when clicking the export button
+openExportModalBtn.addEventListener('click', () => {
+  if (!videoFile) {
+    alert('Please upload a video first!');
+    return;
+  }
+  exportModal.classList.remove('hidden');
+});
+
+// Close export modal on cancel button click
+closeExportModalBtn.addEventListener('click', () => {
+  exportModal.classList.add('hidden');
+});
+
+// Confirm export button click - start export process
+confirmExportBtn.addEventListener('click', async () => {
+  const start = parseTime(startTimeInput.value);
+  const end = parseTime(endTimeInput.value);
+  const videoDuration = videoPreview.duration;
+
+  if (isNaN(start) || isNaN(end) || start >= end || end > videoDuration) {
+    alert('Please enter valid start and end times (start < end and within video length).');
+    return;
+  }
+
+  const resolution = resolutionSelect.value;
+  const quality = qualitySelect.value;
+  const audioBitrate = audioBitrateSelect.value;
+
+  exportModal.classList.add('hidden');
+
+  exportBtn.disabled = true;
+  cancelBtn.disabled = false;
+  exportBtn.textContent = 'Processing...';
+  progressBar.style.display = 'block';
+  progressBar.value = 0;
+  progressText.style.display = 'block';
+  progressText.textContent = 'Loading FFmpeg...';
+
+  try {
+    await processExport({
+      file: videoFile,
+      start,
+      end,
+      resolution,
+      quality,
+      audioBitrate,
+      onProgress: (percent) => {
+        progressBar.value = percent;
+        progressText.textContent = `Processing: ${percent}%`;
+      },
+      onComplete: (blobUrl) => {
+        progressText.textContent = 'Export complete! Preparing download...';
+        progressBar.value = 100;
+
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = 'quickcut_output.mp4';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(blobUrl);
+
+        resetUI();
+      },
+      onError: (error) => {
+        alert('Error during export: ' + error.message);
+        resetUI();
+      }
+    });
+  } catch (e) {
+    alert('Unexpected error: ' + e.message);
+    resetUI();
+  }
+});
+
 updateTimelineUI();
