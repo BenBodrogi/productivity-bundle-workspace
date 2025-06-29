@@ -1,5 +1,3 @@
-// timeline.js
-
 export function initTimeline({
   videoElement,
   timelineTrack,  // the scrolling multi-track container
@@ -10,6 +8,9 @@ export function initTimeline({
 }) {
   const clips = [];
   const BASE_WIDTH = timelineTrack.clientWidth;
+  if (!BASE_WIDTH || BASE_WIDTH < 10) {
+    console.warn('timelineTrack width too small:', BASE_WIDTH);
+  }
 
   // Helpers
   function clamp(v,min,max){ return Math.min(max,Math.max(min,v)); }

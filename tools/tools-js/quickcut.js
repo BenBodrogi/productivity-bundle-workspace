@@ -142,8 +142,15 @@ function handleFiles(files) {
       clipsData = [];
 
       videoPreview.onloadedmetadata = () => {
-        totalDuration.textContent = formatTime(videoPreview.duration || 0);
-        videoProgress.max = videoPreview.duration || 0;
+        totalDurationDisplay.textContent = formatTime(videoPreview.duration);
+        currentTimeDisplay.textContent = '0:00';
+        videoProgress.max = videoPreview.duration;
+        videoProgress.value = 0;
+
+        // Initialize clipsData so timeline can render clips
+        clipsData = [{ startTime: 0, endTime: videoPreview.duration, volume: 1 }];
+
+        rebuildTimeline();
       };
 
       showVideoThumbnail(f);  // Show preview below drag area
@@ -259,12 +266,9 @@ videoPreview.addEventListener('loadedmetadata', () =>{
 //
 let tlInstance = null;
 
-videoPreview.onloadedmetadata = () => {
-  tlInstance = new Timeline(videoPreview); // or whatever it is
-  rebuildTimeline(); // don't pass undefined ref
-};
-
 function rebuildTimeline(){
+  console.log('Rebuilding timeline...');
+  console.log({ multiTracks, videoTrack, audioTrack, clipsData });
   // clear out any old instance
   if(tlInstance && tlInstance.destroy) tlInstance.destroy();
   tlInstance = initTimeline({
