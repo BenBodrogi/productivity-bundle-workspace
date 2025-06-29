@@ -170,50 +170,6 @@ body, html {
   box-sizing: border-box;
 }
 
-.timeline-track {
-  position: relative;
-  background: #444;
-  height: 10px;
-  border-radius: 5px;
-  cursor: pointer;
-  overflow: hidden;
-}
-
-.timeline-fill {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  background: #7b5deb;
-  border-radius: 5px;
-  pointer-events: none;
-  transition: left 0.1s ease, width 0.1s ease;
-}
-
-.handle {
-  position: absolute;
-  top: -6px;
-  width: 20px; /* increased size for easier grabbing */
-  height: 28px; /* increased height */
-  background: #fff;
-  border-radius: 3px;
-  cursor: ew-resize;
-  z-index: 10;
-  box-shadow: 0 0 3px #000;
-  transition: background-color 0.2s ease;
-  user-select: none;
-}
-
-.handle:hover,
-.handle:focus {
-  background-color: #7b5deb;
-  outline: none;
-}
-
-.handle:active {
-  cursor: grabbing;
-  background-color: #6139c6;
-}
-
 .handle-start {
   left: 0%;
 }
@@ -230,13 +186,6 @@ body, html {
 }
 
 .timeline-bar label {
-  font-size: 14px;
-}
-
-.checkbox-label {
-  user-select: none;
-  display: block;
-  margin-top: 8px;
   font-size: 14px;
 }
 
@@ -421,4 +370,58 @@ select:focus {
 
 .modal-buttons button:hover {
   background-color: #6139c6;
+}
+
+.timeline-track {
+  position: relative;
+  height: 60px;
+  background: #222;
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+
+.clip {
+  position: absolute;
+  top: 10px;
+  left: 10%;
+  width: 40%;
+  height: 40px;
+  background: #0a84ff;
+  border-radius: 4px;
+  cursor: grab;
+  user-select: none;
+}
+
+.handle-left {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 10px;
+  height: 100%;
+  background: #004a9f;
+  border-radius: 4px 0 0 4px;
+  cursor: ew-resize;
+}
+
+.handle-right {
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 10px;
+  height: 100%;
+  background: #004a9f;
+  border-radius: 0 4px 4px 0;
+  cursor: ew-resize;
+}
+
+.volume-knob {
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  width: 12px;
+  height: 8px;
+  background: #fff;
+  border-radius: 2px;
+  cursor: ns-resize;
+  transform: translateX(-50%);
 }

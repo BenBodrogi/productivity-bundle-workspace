@@ -54,10 +54,18 @@
     </div>
 
     <div class="timeline-container">
-      <div class="timeline-track">
-        <div class="timeline-fill"></div>
-        <div class="handle handle-start" draggable="true" title="Set start time"></div>
-        <div class="handle handle-end" draggable="true" title="Set end time"></div>
+      <div id="timeline" class="timeline-track">
+        <!-- Clip block representing trimmed segment -->
+        <div id="clip" class="clip">
+          <!-- Left trim handle -->
+          <div id="handle-left" class="handle-left" title="Trim start"></div>
+
+          <!-- Right trim handle -->
+          <div id="handle-right" class="handle-right" title="Trim end"></div>
+
+          <!-- Volume control knob -->
+          <div id="volume-knob" class="volume-knob" title="Drag to adjust volume"></div>
+        </div>
       </div>
 
       <div class="timeline-bar">

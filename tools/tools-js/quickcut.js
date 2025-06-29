@@ -1,4 +1,5 @@
 import { processExport, cancelProcessing } from './ffmpeg-logic.js';
+import { initTimeline } from './timeline.js';
 
 const videoInput = document.getElementById('videoInput');
 const videoPreview = document.getElementById('videoPreview');
@@ -7,7 +8,7 @@ const startTimeInput = document.getElementById('startTime');
 const endTimeInput = document.getElementById('endTime');
 
 const audioBitrateSelect = document.getElementById('audioBitrateSelect');
-const openExportModalBtn = document.getElementById('openExportModalBtn'); // changed from exportBtn
+const openExportModalBtn = document.getElementById('openExportModalBtn');
 const cancelBtn = document.getElementById('cancelBtn');
 const progressBar = document.getElementById('progressBar');
 const progressText = document.getElementById('progressText');
@@ -28,17 +29,16 @@ const previewResolution = document.getElementById('previewResolution');
 const videoProgress = document.getElementById('videoProgress');
 
 const timelineTrack = document.querySelector('.timeline-track');
-const timelineFill = document.querySelector('.timeline-fill');
-const handleStart = document.querySelector('.handle-start');
-const handleEnd = document.querySelector('.handle-end');
+const clipElement = document.querySelector('.clip');
+const handleLeft = document.querySelector('.handle-left');
+const handleRight = document.querySelector('.handle-right');
+const volumeKnob = document.querySelector('.volume-knob');
 
 const exportModal = document.getElementById('exportModal');
 const closeExportModalBtn = document.getElementById('closeExportModalBtn');
 const confirmExportBtn = document.getElementById('confirmExportBtn');
 
 let videoFile;
-let isDraggingStart = false;
-let isDraggingEnd = false;
 let isDraggingVideoProgress = false;
 
 // ---------------------------------
@@ -101,7 +101,11 @@ videoInput.addEventListener('change', () => {
     durationInfo.textContent = `Video Duration: ${formatTime(duration)}`;
     totalDurationDisplay.textContent = formatTime(duration);
     currentTimeDisplay.textContent = formatTime(0);
-    updateTimelineUI();
+
+    // Update timeline clip based on inputs and video duration
+    timeline.updateClipFromInputs();
+    // Reset volume knob to full volume on load
+    timeline.setVolume(1);
   };
 });
 
@@ -275,110 +279,6 @@ previewResolution.addEventListener('change', () => {
 });
 
 // ---------------------------------
-// Timeline slider drag and input sync
-
-function updateTimelineUI() {
-  const startSec = clamp(parseTime(startTimeInput.value), 0, videoPreview.duration);
-  const endSec = clamp(parseTime(endTimeInput.value), 0, videoPreview.duration);
-
-  const startPercent = timeToPercent(startSec);
-  const endPercent = timeToPercent(endSec);
-
-  timelineFill.style.left = `${startPercent}%`;
-  timelineFill.style.width = `${endPercent - startPercent}%`;
-
-  handleStart.style.left = `${startPercent}%`;
-  handleEnd.style.left = `${endPercent}%`;
-
-  // Clamp inputs
-  if (startSec >= endSec) {
-    startTimeInput.style.borderColor = 'red';
-    endTimeInput.style.borderColor = 'red';
-  } else {
-    startTimeInput.style.borderColor = '';
-    endTimeInput.style.borderColor = '';
-  }
-}
-
-startTimeInput.addEventListener('input', () => {
-  if (!isNaN(parseTime(startTimeInput.value))) {
-    updateTimelineUI();
-  }
-});
-
-endTimeInput.addEventListener('input', () => {
-  if (!isNaN(parseTime(endTimeInput.value))) {
-    updateTimelineUI();
-  }
-});
-
-function onHandleDrag(e, handle) {
-  e.preventDefault();
-
-  const rect = timelineTrack.getBoundingClientRect();
-  let clientX = e.clientX !== undefined ? e.clientX : e.touches[0].clientX;
-
-  let percent = ((clientX - rect.left) / rect.width) * 100;
-  percent = clamp(percent, 0, 100);
-
-  if (handle === handleStart) {
-    const endPercent = parseFloat(handleEnd.style.left);
-    if (percent > endPercent) percent = endPercent;
-    handle.style.left = percent + '%';
-
-    const newStartTime = percentToTime(percent);
-    startTimeInput.value = formatTime(newStartTime);
-  } else if (handle === handleEnd) {
-    const startPercent = parseFloat(handleStart.style.left);
-    if (percent < startPercent) percent = startPercent;
-    handle.style.left = percent + '%';
-
-    const newEndTime = percentToTime(percent);
-    endTimeInput.value = formatTime(newEndTime);
-  }
-  updateTimelineUI();
-}
-
-// Add drag event listeners to handles
-handleStart.addEventListener('mousedown', e => {
-  isDraggingStart = true;
-  document.body.style.userSelect = 'none';
-});
-handleEnd.addEventListener('mousedown', e => {
-  isDraggingEnd = true;
-  document.body.style.userSelect = 'none';
-});
-document.addEventListener('mouseup', e => {
-  if (isDraggingStart || isDraggingEnd) {
-    isDraggingStart = false;
-    isDraggingEnd = false;
-    document.body.style.userSelect = '';
-  }
-});
-document.addEventListener('mousemove', e => {
-  if (isDraggingStart) onHandleDrag(e, handleStart);
-  if (isDraggingEnd) onHandleDrag(e, handleEnd);
-});
-
-// Touch events
-handleStart.addEventListener('touchstart', e => {
-  isDraggingStart = true;
-  document.body.style.userSelect = 'none';
-});
-handleEnd.addEventListener('touchstart', e => {
-  isDraggingEnd = true;
-  document.body.style.userSelect = 'none';
-});
-document.addEventListener('touchend', e => {
-  isDraggingStart = false;
-  isDraggingEnd = false;
-  document.body.style.userSelect = '';
-});
-document.addEventListener('touchmove', e => {
-  if (isDraggingStart) onHandleDrag(e, handleStart);
-  if (isDraggingEnd) onHandleDrag(e, handleEnd);
-});
-
 // Skip/Rewind buttons logic (+/- 5 seconds)
 
 rewindBtn.addEventListener('click', () => {
@@ -388,12 +288,29 @@ forwardBtn.addEventListener('click', () => {
   videoPreview.currentTime = Math.min(videoPreview.duration, videoPreview.currentTime + 5);
 });
 
+// ---------------------------------
 // Volume slider sync
 
 volumeSlider.addEventListener('input', () => {
   videoPreview.volume = volumeSlider.value;
+  // Optionally sync volume knob here, if you want
 });
 videoPreview.volume = volumeSlider.value;
 
-// Initial timeline UI update
-updateTimelineUI();
+// ---------------------------------
+// Initialize timeline
+
+const timeline = initTimeline({
+  videoElement: videoPreview,
+  startTimeInput,
+  endTimeInput,
+  timelineTrack,
+  clipElement,
+  handleLeft,
+  handleRight,
+  volumeKnob,
+  onTimesChanged: (start, end, volume) => {
+    // Update your preview or export params if needed
+    // e.g., videoPreview.volume = volume;
+  }
+});
