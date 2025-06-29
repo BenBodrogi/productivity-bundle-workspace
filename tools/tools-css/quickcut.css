@@ -73,7 +73,7 @@ body, html {
   display: flex;
   gap: 10px;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;  /* spread items to edges */
   flex-wrap: nowrap;
   width: 640px;
   user-select: none;
@@ -81,12 +81,10 @@ body, html {
   overflow: visible;
 }
 
-/* Volume slider: aligned right in controls */
-#volumeSlider {
-  width: 100px;
-  margin-left: auto;  /* push to right */
-  cursor: pointer;
-  vertical-align: middle;
+.left-controls {
+  display: flex;
+  gap: 10px;
+  align-items: center;
 }
 
 /* video progress slider below controls */
@@ -114,6 +112,7 @@ body, html {
   margin-top: -4px;
   border: 2px solid #fff;
 }
+
 #videoProgress::-moz-range-thumb {
   width: 14px;
   height: 14px;

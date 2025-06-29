@@ -96,18 +96,26 @@ function handleFiles(files) {
   if (!files.length) return;
   for (const f of files) {
     if (f.type.startsWith('video/')) {
-      // replace main video
       videoFile = f;
       videoPreview.src = URL.createObjectURL(f);
       videoPreview.load();
-      clipsData = [{ startTime:0, endTime: videoPreview.duration||10, volume:1 }];
+
+      // Clear clipsData now, but update after metadata loads
+      clipsData = [];
+
+      // Wait for metadata to load before setting clipsData and rebuilding timeline
+      videoPreview.onloadedmetadata = () => {
+        clipsData = [{ startTime: 0, endTime: videoPreview.duration, volume: 1 }];
+        rebuildTimeline();
+      };
       break;
     }
     if (f.type.startsWith('audio/')) {
-      clipsData.push({ startTime:0, endTime:videoPreview.duration||10, volume:1 });
+      clipsData.push({ startTime: 0, endTime: videoPreview.duration || 10, volume: 1 });
     }
   }
-  rebuildTimeline();
+  // Remove the rebuildTimeline call here, as it’s called on metadata load
+  // rebuildTimeline();
 }
 
 //
