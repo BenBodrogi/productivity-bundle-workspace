@@ -67,18 +67,24 @@ body, html {
   user-select: none;
 }
 
-/* video controls below video */
 .video-controls {
   margin-top: 10px;
   display: flex;
-  gap: 10px;
+  justify-content: center;
   align-items: center;
-  justify-content: space-between;  /* spread items to edges */
-  flex-wrap: nowrap;
+  gap: 10px;
   width: 640px;
   user-select: none;
-  flex-shrink: 0;
-  overflow: visible;
+}
+
+.video-duration {
+  margin-top: 6px;
+  text-align: right;
+  width: 640px;
+  font-size: 14px;
+  color: #ccc;
+  font-family: monospace;
+  user-select: none;
 }
 
 .left-controls {
@@ -138,79 +144,6 @@ body, html {
 
 .video-controls button:hover {
   background: #444;
-}
-
-/* Preview resolution select */
-.video-controls select {
-  padding: 6px 10px;
-  background: #111;
-  border-radius: 5px;
-  border: 1px solid #444;
-  color: #fff;
-}
-
-/* Push preview resolution label to right side */
-.preview-resolution-label {
-  margin-left: 10px;
-  font-size: 14px;
-  white-space: nowrap;
-}
-
-/* timeline container (bottom half) */
-.timeline-container {
-  flex: 1 1 50%;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  overflow: hidden;
-  max-width: 1000px;
-  width: 100%;
-  margin: 0 auto;
-  padding: 20px 0;
-  box-sizing: border-box;
-}
-
-.handle-start {
-  left: 0%;
-}
-
-.handle-end {
-  left: 100%;
-}
-
-.timeline-bar {
-  margin-top: 15px;
-  display: flex;
-  justify-content: center;
-  gap: 25px;
-}
-
-.timeline-bar label {
-  font-size: 14px;
-}
-
-.button-row {
-  margin-top: 20px;
-  display: flex;
-  gap: 10px;
-}
-
-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-progress {
-  width: 100%;
-  margin-top: 10px;
-  display: none;
-}
-
-#progressText {
-  margin-top: 5px;
-  font-size: 14px;
-  display: none;
-  text-align: center;
 }
 
 /* Skip/Rewind buttons with "5" in the middle */
@@ -276,6 +209,63 @@ progress {
   font-weight: bold;
   color: #7b5deb;
   user-select: none;
+}
+
+/* timeline container (bottom half) */
+.timeline-container {
+  flex: 1 1 50%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  overflow: hidden;
+  max-width: 1000px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 20px 0;
+  box-sizing: border-box;
+}
+
+.handle-start {
+  left: 0%;
+}
+
+.handle-end {
+  left: 100%;
+}
+
+.timeline-bar {
+  margin-top: 15px;
+  display: flex;
+  justify-content: center;
+  gap: 25px;
+}
+
+.timeline-bar label {
+  font-size: 14px;
+}
+
+.button-row {
+  margin-top: 20px;
+  display: flex;
+  gap: 10px;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+progress {
+  width: 100%;
+  margin-top: 10px;
+  display: none;
+}
+
+#progressText {
+  margin-top: 5px;
+  font-size: 14px;
+  display: none;
+  text-align: center;
 }
 
 /* Make sliders have pointer cursor */

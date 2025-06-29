@@ -35,26 +35,16 @@
         </div>
 
         <div class="video-controls">
-          <div class="left-controls">
             <button id="rewindBtn" ...></button>
             <button id="playPauseBtn" ...>▶️</button>
             <button id="forwardBtn" ...></button>
-
-            <span id="currentTime">0:00</span> / <span id="totalDuration">0:00</span>
-          </div>
-
-          <label class="preview-resolution-label">
-            Preview Resolution:
-            <select id="previewResolution">
-              <option value="original">Original</option>
-              <option value="1920x1080">1080p</option>
-              <option value="1280x720">720p</option>
-              <option value="854x480">480p</option>
-            </select>
-          </label>
         </div>
 
         <input type="range" id="videoProgress" min="0" max="100" step="0.1" value="0" title="Video progress" />
+
+        <div class="video-duration">
+          <span id="currentTime">0:00</span> / <span id="totalDuration">0:00</span>
+        </div>
       </main>
     </div>
 
