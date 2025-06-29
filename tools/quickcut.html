@@ -11,13 +11,14 @@
     <div class="top-container">
       <aside class="sidebar">
         <h2>🎬 QuickCut</h2>
-        <input type="file" id="videoInput" accept="video/*" />
         <div class="duration" id="durationInfo"></div>
         
         <div id="importArea" class="import-area">
           Drag & drop video/audio here, or click to import
           <input type="file" id="fileInput" accept="video/*,audio/*" hidden multiple />
         </div>
+
+        <div id="previewThumbnail" class="preview-thumbnail"></div>
 
         <div class="button-row">
           <button id="openExportModalBtn">📤 Export</button>

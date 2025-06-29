@@ -92,6 +92,29 @@ importArea.addEventListener('drop', e => {
 });
 fileInput.addEventListener('change', () => handleFiles(fileInput.files));
 
+function showVideoThumbnail(file) {
+  // Clear previous content
+  previewThumbnail.innerHTML = '';
+
+  // Create video element for thumbnail preview
+  const vid = document.createElement('video');
+  vid.src = URL.createObjectURL(file);
+  vid.muted = true;
+  vid.playsInline = true;
+  vid.autoplay = true;
+  vid.loop = true;
+  vid.controls = false;
+
+  previewThumbnail.appendChild(vid);
+  previewThumbnail.style.display = 'block';
+
+  // Optionally, clicking thumbnail could play/pause the main video or open file picker
+  previewThumbnail.onclick = () => {
+    videoPreview.src = vid.src;
+    videoPreview.load();
+  };
+}
+
 function handleFiles(files) {
   if (!files.length) return;
   for (const f of files) {
@@ -100,22 +123,21 @@ function handleFiles(files) {
       videoPreview.src = URL.createObjectURL(f);
       videoPreview.load();
 
-      // Clear clipsData now, but update after metadata loads
       clipsData = [];
 
-      // Wait for metadata to load before setting clipsData and rebuilding timeline
       videoPreview.onloadedmetadata = () => {
         clipsData = [{ startTime: 0, endTime: videoPreview.duration, volume: 1 }];
         rebuildTimeline();
       };
+
+      showVideoThumbnail(f);  // Show preview below drag area
+
       break;
     }
     if (f.type.startsWith('audio/')) {
       clipsData.push({ startTime: 0, endTime: videoPreview.duration || 10, volume: 1 });
     }
   }
-  // Remove the rebuildTimeline call here, as it’s called on metadata load
-  // rebuildTimeline();
 }
 
 //
