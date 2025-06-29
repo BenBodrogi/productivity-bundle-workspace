@@ -1,413 +1,176 @@
 import { processExport, cancelProcessing } from './ffmpeg-logic.js';
 import { initTimeline } from './timeline.js';
 
-const videoInput = document.getElementById('videoInput');
-const videoPreview = document.getElementById('videoPreview');
-const multiTracks = document.querySelector('.timeline-multi-tracks');
+//
+// === UI ELEMENTS ===
+//
+const videoInput          = document.getElementById('videoInput');
+const videoPreview        = document.getElementById('videoPreview');
+const multiTracks         = document.querySelector('.timeline-multi-tracks');
 
-const startTimeInput = document.getElementById('startTime');
-const endTimeInput = document.getElementById('endTime');
+const startTimeInput      = document.getElementById('startTime');
+const endTimeInput        = document.getElementById('endTime');
 
-const audioBitrateSelect = document.getElementById('audioBitrateSelect');
-const openExportModalBtn = document.getElementById('openExportModalBtn');
-const cancelBtn = document.getElementById('cancelBtn');
-const progressBar = document.getElementById('progressBar');
-const progressText = document.getElementById('progressText');
-const durationInfo = document.getElementById('durationInfo');
+const audioBitrateSelect  = document.getElementById('audioBitrateSelect');
+const openExportModalBtn  = document.getElementById('openExportModalBtn');
+const cancelBtn           = document.getElementById('cancelBtn');
+const progressBar         = document.getElementById('progressBar');
+const progressText        = document.getElementById('progressText');
+const durationInfo        = document.getElementById('durationInfo');
 
-const resolutionSelect = document.getElementById('resolutionSelect');
-const qualitySelect = document.getElementById('qualitySelect');
+const resolutionSelect    = document.getElementById('resolutionSelect');
+const qualitySelect       = document.getElementById('qualitySelect');
 
-const playPauseBtn = document.getElementById('playPauseBtn');
-const rewindBtn = document.getElementById('rewindBtn');
-const forwardBtn = document.getElementById('forwardBtn');
+const playPauseBtn        = document.getElementById('playPauseBtn');
+const rewindBtn           = document.getElementById('rewindBtn');
+const forwardBtn          = document.getElementById('forwardBtn');
 
-const currentTimeDisplay = document.getElementById('currentTime');
-const totalDurationDisplay = document.getElementById('totalDuration');
-const previewResolution = document.getElementById('previewResolution');
-const videoProgress = document.getElementById('videoProgress');
+const currentTimeDisplay  = document.getElementById('currentTime');
+const totalDurationDisplay= document.getElementById('totalDuration');
+const previewResolution   = document.getElementById('previewResolution');
+const videoProgress       = document.getElementById('videoProgress');
+const volumeSlider        = document.getElementById('volumeSlider');
 
-const timelineTrack = document.querySelector('.timeline-track');
+const timelineTrack       = document.querySelector('.timeline-track');
+const videoTrack          = document.getElementById('videoTrack');
+const audioTrack          = document.getElementById('audioTrack');
 
-const exportModal = document.getElementById('exportModal');
+const importArea          = document.getElementById('importArea');
+const fileInput           = document.getElementById('fileInput');
+
+const exportModal         = document.getElementById('exportModal');
 const closeExportModalBtn = document.getElementById('closeExportModalBtn');
-const confirmExportBtn = document.getElementById('confirmExportBtn');
-
-const videoTrack = document.getElementById('videoTrack');
-const audioTrack = document.getElementById('audioTrack');
-
-const importArea = document.getElementById('importArea');
-const fileInput = document.getElementById('fileInput');
-
-const MIN_ZOOM = 0.5;
-const MAX_ZOOM = 3;
-let zoomFactor = 1;
-
-// Store the base width (full timeline width at zoom 1)
-const BASE_WIDTH = multiTracks.clientWidth || 1000; 
-multiTracks.style.width = `${BASE_WIDTH}px`;
-
-multiTracks.addEventListener('wheel', e => {
-  e.preventDefault();
-
-  const delta = Math.sign(e.deltaY);
-  zoomFactor -= delta * 0.1; // zoom sensitivity
-  zoomFactor = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, zoomFactor));
-
-  multiTracks.style.width = `${BASE_WIDTH * zoomFactor}px`;
-
-  // Instead of only updating positions, rebuild clips UI for accurate sizing
-  buildClips();
-});
-
-function updateAllClipsPositionsAndSizes(zoom) {
-  const duration = videoPreview.duration || 1;
-  const tracks = multiTracks.querySelectorAll('.track');
-
-  tracks.forEach(track => {
-    const clips = track.querySelectorAll('.clip');
-    clips.forEach(clip => {
-      // Expect data-start and data-end attributes (in seconds)
-      const start = parseFloat(clip.dataset.start);
-      const end = parseFloat(clip.dataset.end);
-      if (isNaN(start) || isNaN(end)) return;
-
-      const baseLeftPx = (start / duration) * BASE_WIDTH;
-      const baseWidthPx = ((end - start) / duration) * BASE_WIDTH;
-
-      clip.style.left = `${baseLeftPx * zoom}px`;
-      clip.style.width = `${baseWidthPx * zoom}px`;
-    });
-  });
-}
+const confirmExportBtn    = document.getElementById('confirmExportBtn');
 
 let videoFile;
 let isDraggingVideoProgress = false;
 
-// Keep clips data array, add volume for each clip
+//
+// === MAIN CLIPS DATA ===
+//
 let clipsData = [
-  { startTime: 0, endTime: 10, volume: 1 },
-  { startTime: 12, endTime: 20, volume: 0.8 }
+  { startTime: 0,  endTime: 10, volume: 1 },   // main video clip
+  { startTime: 12, endTime: 20, volume: 0.8 }  // an audio clip
 ];
 
-// Hold timeline instances for each clip
-let timelineInstances = [];
-
-// --------- Utility functions (formatTime, parseTime, clamp) remain unchanged ---------
-
-// Clear and build clip elements dynamically inside timelineTrack
-function buildClips() {
-  videoTrack.innerHTML = '';
-  audioTrack.innerHTML = '';
-
-  clipsData.forEach((clip, index) => {
-    // Create clip div
-    const clipDiv = document.createElement('div');
-    clipDiv.classList.add('clip');
-    clipDiv.style.position = 'absolute';
-
-    // Create handles
-    const handleLeft = document.createElement('div');
-    handleLeft.classList.add('handle-left');
-    const handleRight = document.createElement('div');
-    handleRight.classList.add('handle-right');
-
-    // Create volume knob container & knob for audio clips only
-    const volumeControl = document.createElement('div');
-    volumeControl.classList.add('volume-control');
-    const volumeKnob = document.createElement('div');
-    volumeKnob.classList.add('volume-knob');
-    volumeControl.appendChild(volumeKnob);
-
-    clipDiv.appendChild(handleLeft);
-    clipDiv.appendChild(handleRight);
-    clipDiv.appendChild(volumeControl);
-
-    if (index === 0) {
-      videoTrack.appendChild(clipDiv); // video clip in video track
-    } else {
-      audioTrack.appendChild(clipDiv); // audio clips in audio track
-    }
-
-    // Initialize timeline per clip, pass all these elements
-    const timeline = initTimeline({
-      videoElement: videoPreview,
-      startTimeInput: null, // you can create or manage inputs separately if needed
-      endTimeInput: null,
-      timelineTrack,
-      clipElement: clipDiv,
-      handleLeft,
-      handleRight,
-      volumeKnob,
-      onTimesChanged: (start, end, volume) => {
-        clipsData[index].startTime = start;
-        clipsData[index].endTime = end;
-        clipsData[index].volume = volume;
-        // If you want, update the video volume accordingly here, or during playback/export
-        console.log(`Clip ${index} updated: start=${start}, end=${end}, volume=${volume}`);
-      }
-    });
-
-    timelineInstances[index] = timeline;
-
-    // Set initial positions & volume
-    clipDiv.style.left = `${timeToPixels(clip.startTime)}px`;
-    clipDiv.style.width = `${timeToPixels(clip.endTime) - timeToPixels(clip.startTime)}px`;
-    timeline.setVolume(clip.volume);
-  });
-}
-
-// Convert time to pixels helper used above
-function timeToPixels(time) {
-  const duration = videoPreview.duration || 1;
-  const trackWidth = timelineTrack.clientWidth;
-  return (time / duration) * trackWidth;
-}
-
-// When video metadata loads
-videoPreview.addEventListener('loadedmetadata', () => {
-  totalDurationDisplay.textContent = formatTime(videoPreview.duration);
-  currentTimeDisplay.textContent = formatTime(0);
-  videoProgress.max = videoPreview.duration;
-  videoProgress.value = 0;
-
-  // Build clip elements and initialize timelines for each clip
-  buildClips();
-});
-
-// Clicking opens file dialog
-importArea.addEventListener('click', () => fileInput.click());
-
-// Drag & drop events
-importArea.addEventListener('dragover', (e) => {
-  e.preventDefault();
-  importArea.classList.add('dragover');
-});
-
-importArea.addEventListener('dragleave', (e) => {
-  e.preventDefault();
-  importArea.classList.remove('dragover');
-});
-
-importArea.addEventListener('drop', (e) => {
-  e.preventDefault();
-  importArea.classList.remove('dragover');
-  handleFiles(e.dataTransfer.files);
-});
-
-// File input change
-fileInput.addEventListener('change', () => {
-  handleFiles(fileInput.files);
-});
-
-function handleFiles(files) {
-  if (!files || files.length === 0) return;
-
-  for (const file of files) {
-    if (file.type.startsWith('video/')) {
-      // Load video - for simplicity, let's replace the main video
-      videoFile = file;
-      videoPreview.src = URL.createObjectURL(file);
-      videoPreview.load();
-      // Reset timeline data for new video
-      clipsData = [{ startTime: 0, endTime: videoPreview.duration || 10, volume: 1 }];
-      buildClips();
-      break; // Only one main video clip allowed here
-    } else if (file.type.startsWith('audio/')) {
-      // Add new audio clip with default timings and volume
-      clipsData.push({
-        startTime: 0,
-        endTime: videoPreview.duration || 10,
-        volume: 1
-      });
-      buildClips();
-    }
-  }
-}
-
-// ---------------------------------
-// Time helpers mm:ss <-> seconds
+//
+// === SIMPLE HELPERS ===
+//
 function formatTime(sec) {
   if (isNaN(sec) || sec < 0) return '0:00';
-  const m = Math.floor(sec / 60);
-  const s = Math.floor(sec % 60);
-  return `${m}:${s.toString().padStart(2, '0')}`;
+  const m = Math.floor(sec/60), s = Math.floor(sec%60);
+  return `${m}:${s.toString().padStart(2,'0')}`;
 }
-
 function parseTime(str) {
-  // expects "mm:ss"
-  const parts = str.split(':');
-  if (parts.length !== 2) return NaN;
-  const m = parseInt(parts[0], 10);
-  const s = parseInt(parts[1], 10);
-  if (isNaN(m) || isNaN(s) || s >= 60 || m < 0 || s < 0) return NaN;
-  return m * 60 + s;
+  const p = str.split(':'), m = +p[0], s = +p[1];
+  return (p.length===2 && !isNaN(m)&&!isNaN(s)&&s<60) ? m*60+s : NaN;
 }
+function clamp(v,min,max){ return Math.min(max,Math.max(min,v)); }
 
-function clamp(value, min, max) {
-  return Math.min(max, Math.max(min, value));
-}
-
-function timeToPercent(time) {
-  return (time / videoPreview.duration) * 100;
-}
-
-function percentToTime(percent) {
-  return (percent / 100) * videoPreview.duration;
-}
-
-function resetUI() {
-  progressBar.style.display = 'none';
-  progressText.style.display = 'none';
-  openExportModalBtn.disabled = false;  // enabled main export button
-  cancelBtn.disabled = true;
-  openExportModalBtn.textContent = '📤 Export';
-}
-
-// ---------------------------------
-// Video loading
-
-videoInput.addEventListener('change', () => {
-  const file = videoInput.files[0];
-  if (!file) return;
-
-  videoFile = file;
-  videoPreview.src = URL.createObjectURL(file);
-  videoPreview.load();
-
-  videoPreview.onloadedmetadata = () => {
-    const duration = videoPreview.duration;
-    startTimeInput.value = '0:00';
-    endTimeInput.value = formatTime(duration);
-    videoProgress.max = duration;
-    videoProgress.value = 0;
-
-    durationInfo.textContent = `Video Duration: ${formatTime(duration)}`;
-    totalDurationDisplay.textContent = formatTime(duration);
-    currentTimeDisplay.textContent = formatTime(0);
-
-    // Update timeline clip based on inputs and video duration
-    timeline.updateClipFromInputs();
-    // Reset volume knob to full volume on load
-    timeline.setVolume(1);
-  };
+//
+// === IMPORT AREA HANDLING ===
+//
+importArea.addEventListener('click', () => fileInput.click());
+importArea.addEventListener('dragover', e => { e.preventDefault(); importArea.classList.add('dragover'); });
+importArea.addEventListener('dragleave', e => { e.preventDefault(); importArea.classList.remove('dragover'); });
+importArea.addEventListener('drop', e => {
+  e.preventDefault(); importArea.classList.remove('dragover');
+  handleFiles(e.dataTransfer.files);
 });
+fileInput.addEventListener('change', () => handleFiles(fileInput.files));
 
-// ---------------------------------
-// Export modal open/close
-
-openExportModalBtn.addEventListener('click', () => {
-  if (!videoFile) {
-    alert('Please upload a video first!');
-    return;
+function handleFiles(files) {
+  if (!files.length) return;
+  for (const f of files) {
+    if (f.type.startsWith('video/')) {
+      // replace main video
+      videoFile = f;
+      videoPreview.src = URL.createObjectURL(f);
+      videoPreview.load();
+      clipsData = [{ startTime:0, endTime: videoPreview.duration||10, volume:1 }];
+      break;
+    }
+    if (f.type.startsWith('audio/')) {
+      clipsData.push({ startTime:0, endTime:videoPreview.duration||10, volume:1 });
+    }
   }
+  rebuildTimeline();
+}
+
+//
+// === EXPORT LOGIC ===
+//
+openExportModalBtn.addEventListener('click', () => {
+  if (!videoFile) return alert('Please upload a video first!');
   exportModal.classList.remove('hidden');
 });
-
-closeExportModalBtn.addEventListener('click', () => {
-  exportModal.classList.add('hidden');
-});
-
-// ---------------------------------
-// Export confirm button logic
+closeExportModalBtn.addEventListener('click', () => exportModal.classList.add('hidden'));
 
 confirmExportBtn.addEventListener('click', async () => {
-  const start = parseTime(startTimeInput.value);
-  const end = parseTime(endTimeInput.value);
-  const videoDuration = videoPreview.duration;
-
-  if (isNaN(start) || isNaN(end) || start >= end || end > videoDuration) {
-    alert('Please enter valid start and end times (start < end and within video length).');
-    return;
-  }
-
-  const resolution = resolutionSelect.value;
-  const quality = qualitySelect.value;
-  const audioBitrate = audioBitrateSelect.value;
-
+  const start = parseTime(startTimeInput.value),
+        end   = parseTime(endTimeInput.value),
+        dur   = videoPreview.duration;
+  if (isNaN(start)||isNaN(end)||start>=end||end>dur)
+    return alert('Enter valid start/end times within video.');
   exportModal.classList.add('hidden');
-
   openExportModalBtn.disabled = true;
   cancelBtn.disabled = false;
   openExportModalBtn.textContent = 'Processing...';
   progressBar.style.display = 'block';
-  progressBar.value = 0;
   progressText.style.display = 'block';
   progressText.textContent = 'Loading FFmpeg...';
 
   try {
     await processExport({
-      file: videoFile,
-      start,
-      end,
-      resolution,
-      quality,
-      audioBitrate,
-      onProgress: (percent) => {
-        progressBar.value = percent;
-        progressText.textContent = `Processing: ${percent}%`;
-      },
-      onComplete: (blobUrl) => {
-        progressText.textContent = 'Export complete! Preparing download...';
+      file: videoFile, start, end,
+      resolution: resolutionSelect.value,
+      quality: qualitySelect.value,
+      audioBitrate: audioBitrateSelect.value,
+      onProgress: pct => { progressBar.value=pct; progressText.textContent=`Processing: ${pct}%`; },
+      onComplete: blobUrl => {
+        progressText.textContent = 'Export complete!';
         progressBar.value = 100;
-
         const a = document.createElement('a');
-        a.href = blobUrl;
-        a.download = 'quickcut_output.mp4';
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        URL.revokeObjectURL(blobUrl);
-
+        a.href = blobUrl; a.download='quickcut_output.mp4'; document.body.appendChild(a); a.click();
+        a.remove(); URL.revokeObjectURL(blobUrl);
         resetUI();
       },
-      onError: (error) => {
-        alert('Error during export: ' + error.message);
-        resetUI();
-      }
+      onError: err => { alert('Export error: '+err.message); resetUI(); }
     });
-  } catch (e) {
-    alert('Unexpected error: ' + e.message);
+  } catch(e) {
+    alert('Unexpected: '+e.message);
     resetUI();
   }
 });
-
-// ---------------------------------
-// Cancel button logic
-
 cancelBtn.addEventListener('click', async () => {
-  openExportModalBtn.disabled = false;
-  cancelBtn.disabled = true;
-  progressText.textContent = 'Cancelling... Please wait.';
-
-  try {
-    await cancelProcessing();
-  } catch (e) {
-    console.error('Cancel error:', e);
-  }
-
+  openExportModalBtn.disabled=false; cancelBtn.disabled=true;
+  progressText.textContent='Cancelling...';
+  try { await cancelProcessing(); } catch{} 
   resetUI();
 });
+function resetUI(){
+  progressBar.style.display='none';
+  progressText.style.display='none';
+  openExportModalBtn.disabled=false;
+  cancelBtn.disabled=true;
+  openExportModalBtn.textContent='📤 Export';
+}
 
-// ---------------------------------
-// PLAY/PAUSE button
+//
+// === PLAYBACK CONTROLS ===
+//
+playPauseBtn.addEventListener('click', () =>
+  videoPreview.paused ? videoPreview.play() : videoPreview.pause()
+);
+videoPreview.addEventListener('play', () => playPauseBtn.textContent='⏸️');
+videoPreview.addEventListener('pause',() => playPauseBtn.textContent='▶️');
 
-playPauseBtn.addEventListener('click', () => {
-  if (videoPreview.paused) {
-    videoPreview.play();
-  } else {
-    videoPreview.pause();
-  }
-});
-videoPreview.addEventListener('play', () => {
-  playPauseBtn.textContent = '⏸️';
-});
-videoPreview.addEventListener('pause', () => {
-  playPauseBtn.textContent = '▶️';
-});
-
-// --------------------------------
-// Video time update and progress slider sync
+rewindBtn.addEventListener('click', () =>
+  videoPreview.currentTime = Math.max(0, videoPreview.currentTime - 5)
+);
+forwardBtn.addEventListener('click', () =>
+  videoPreview.currentTime = Math.min(videoPreview.duration, videoPreview.currentTime + 5)
+);
 
 videoPreview.addEventListener('timeupdate', () => {
   if (!isDraggingVideoProgress) {
@@ -415,88 +178,56 @@ videoPreview.addEventListener('timeupdate', () => {
     videoProgress.value = videoPreview.currentTime;
   }
 });
+videoProgress.addEventListener('pointerdown',()=>isDraggingVideoProgress=true);
+videoProgress.addEventListener('input',()=>currentTimeDisplay.textContent=formatTime(videoProgress.value));
+videoProgress.addEventListener('pointerup', ()=>{ videoPreview.currentTime=videoProgress.value; isDraggingVideoProgress=false; });
+videoProgress.addEventListener('pointercancel',()=>isDraggingVideoProgress=false);
+videoProgress.addEventListener('pointerleave',()=>isDraggingVideoProgress=false);
 
-videoProgress.addEventListener('pointerdown', () => {
-  isDraggingVideoProgress = true;
-});
-videoProgress.addEventListener('input', () => {
-  currentTimeDisplay.textContent = formatTime(videoProgress.value);
-});
-videoProgress.addEventListener('pointerup', () => {
-  videoPreview.currentTime = videoProgress.value;
-  isDraggingVideoProgress = false;
-});
-videoProgress.addEventListener('pointercancel', () => {
-  isDraggingVideoProgress = false;
-});
-videoProgress.addEventListener('pointerleave', () => {
-  isDraggingVideoProgress = false;
-});
-
-// ---------------------------------
-// Preview resolution selector
-
-previewResolution.addEventListener('change', () => {
-  const val = previewResolution.value;
-  switch (val) {
-    case 'original':
-      videoPreview.removeAttribute('width');
-      videoPreview.removeAttribute('height');
-      break;
-    case '1920x1080':
-      videoPreview.width = 1920;
-      videoPreview.height = 1080;
-      break;
-    case '1280x720':
-      videoPreview.width = 1280;
-      videoPreview.height = 720;
-      break;
-    case '854x480':
-      videoPreview.width = 854;
-      videoPreview.height = 480;
-      break;
-    default:
-      videoPreview.removeAttribute('width');
-      videoPreview.removeAttribute('height');
+previewResolution.addEventListener('change', ()=>{
+  const v=previewResolution.value;
+  if(v!=='original') {
+    const [w,h]=v.split('x').map(n=>+n);
+    videoPreview.width=w; videoPreview.height=h;
+  } else {
+    videoPreview.removeAttribute('width'); videoPreview.removeAttribute('height');
   }
-  videoPreview.style.filter = 'none';
 });
 
-// ---------------------------------
-// Skip/Rewind buttons logic (+/- 5 seconds)
-
-rewindBtn.addEventListener('click', () => {
-  videoPreview.currentTime = Math.max(0, videoPreview.currentTime - 5);
-});
-forwardBtn.addEventListener('click', () => {
-  videoPreview.currentTime = Math.min(videoPreview.duration, videoPreview.currentTime + 5);
-});
-
-// ---------------------------------
-// Volume slider sync
-
-volumeSlider.addEventListener('input', () => {
-  videoPreview.volume = volumeSlider.value;
-  // Optionally sync volume knob here, if you want
-});
+volumeSlider.addEventListener('input', ()=>videoPreview.volume=volumeSlider.value);
 videoPreview.volume = volumeSlider.value;
 
-// ---------------------------------
-// Initialize timeline
-
-const timeline = initTimeline({
-  videoElement: videoPreview,
-  startTimeInput,
-  endTimeInput,
-  timelineTrack,
-  clipElement,
-  handleLeft,
-  handleRight,
-  volumeKnob,
-  onTimesChanged: (start, end, volume) => {
-    // update your video element volume and time inputs accordingly
-    videoPreview.volume = volume;
-    startTimeInput.value = formatTime(start);
-    endTimeInput.value = formatTime(end);
-  }
+//
+// === WHEN VIDEO LOADS, BUILD TIMELINE ===
+//
+videoPreview.addEventListener('loadedmetadata', () =>{
+  totalDurationDisplay.textContent = formatTime(videoPreview.duration);
+  currentTimeDisplay.textContent = '0:00';
+  videoProgress.max = videoPreview.duration;
+  videoProgress.value = 0;
+  rebuildTimeline();
 });
+
+//
+// === TIE INTO timeline.js ===
+//
+let tlInstance = null;
+function rebuildTimeline(){
+  // clear out any old instance
+  if(tlInstance && tlInstance.destroy) tlInstance.destroy();
+  tlInstance = initTimeline({
+    videoElement: videoPreview,
+    timelineTrack: multiTracks,
+    videoTrack,
+    audioTrack,
+    clipsData,
+    onTimesChanged: (idx,start,end,volume)=>{
+      // keep main start/end inputs in sync with clip 0
+      if(idx===0){
+        startTimeInput.value = formatTime(start);
+        endTimeInput.value   = formatTime(end);
+      }
+      videoPreview.volume = volume;
+    }
+  });
+}
