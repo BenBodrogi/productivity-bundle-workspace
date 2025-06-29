@@ -16,7 +16,6 @@ const openExportModalBtn  = document.getElementById('openExportModalBtn');
 const cancelBtn           = document.getElementById('cancelBtn');
 const progressBar         = document.getElementById('progressBar');
 const progressText        = document.getElementById('progressText');
-const durationInfo        = document.getElementById('durationInfo');
 
 const resolutionSelect    = document.getElementById('resolutionSelect');
 const qualitySelect       = document.getElementById('qualitySelect');
@@ -28,9 +27,8 @@ const forwardBtn          = document.getElementById('forwardBtn');
 const currentTimeDisplay  = document.getElementById('currentTime');
 const totalDurationDisplay= document.getElementById('totalDuration');
 const videoProgress       = document.getElementById('videoProgress');
-const volumeSlider        = document.getElementById('volumeSlider');
 
-const timelineTrack       = document.querySelector('.timeline-track');
+const timelineTrack       = document.querySelector('.timeline-multi-tracks');
 const videoTrack          = document.getElementById('videoTrack');
 const audioTrack          = document.getElementById('audioTrack');
 
@@ -47,10 +45,7 @@ let isDraggingVideoProgress = false;
 //
 // === MAIN CLIPS DATA ===
 //
-let clipsData = [
-  { startTime: 0,  endTime: 10, volume: 1 },   // main video clip
-  { startTime: 12, endTime: 20, volume: 0.8 }  // an audio clip
-];
+let clipsData = [];
 
 //
 // === SIMPLE HELPERS ===
@@ -64,9 +59,9 @@ function formatTime(seconds) {
 
 function parseTime(str) {
   const p = str.split(':'), m = +p[0], s = +p[1];
-  return (p.length===2 && !isNaN(m)&&!isNaN(s)&&s<60) ? m*60+s : NaN;
+  return (p.length === 2 && !isNaN(m) && !isNaN(s) && s < 60) ? m * 60 + s : NaN;
 }
-function clamp(v,min,max){ return Math.min(max,Math.max(min,v)); }
+function clamp(v, min, max) { return Math.min(max, Math.max(min, v)); }
 
 //
 // === IMPORT AREA HANDLING ===
@@ -75,61 +70,11 @@ importArea.addEventListener('click', () => fileInput.click());
 importArea.addEventListener('dragover', e => { e.preventDefault(); importArea.classList.add('dragover'); });
 importArea.addEventListener('dragleave', e => { e.preventDefault(); importArea.classList.remove('dragover'); });
 importArea.addEventListener('drop', e => {
-  e.preventDefault(); importArea.classList.remove('dragover');
+  e.preventDefault();
+  importArea.classList.remove('dragover');
   handleFiles(e.dataTransfer.files);
 });
 fileInput.addEventListener('change', () => handleFiles(fileInput.files));
-
-function showVideoThumbnail(file) {
-  // Clear previous content
-  previewThumbnail.innerHTML = '';
-
-  // Create a hidden video element to extract the first frame
-  const vid = document.createElement('video');
-  vid.src = URL.createObjectURL(file);
-  vid.muted = true;
-  vid.playsInline = true;
-  vid.autoplay = false;  // don't autoplay here
-  vid.controls = false;
-  vid.style.display = 'none'; // hide it
-
-  // Append hidden video to the DOM so it can load metadata and seek
-  document.body.appendChild(vid);
-
-  vid.addEventListener('loadedmetadata', () => {
-    // Set video currentTime to 0 to get first frame
-    vid.currentTime = 0;
-  });
-
-  vid.addEventListener('seeked', () => {
-    // Create canvas and draw first frame
-    const canvas = document.createElement('canvas');
-    canvas.width = vid.videoWidth;
-    canvas.height = vid.videoHeight;
-    const ctx = canvas.getContext('2d');
-    ctx.drawImage(vid, 0, 0, canvas.width, canvas.height);
-
-    // Create image from canvas
-    const img = document.createElement('img');
-    img.src = canvas.toDataURL();
-    img.alt = 'Video thumbnail';
-
-    // Clear previewThumbnail and add the image
-    previewThumbnail.innerHTML = '';
-    previewThumbnail.appendChild(img);
-    previewThumbnail.style.display = 'block';
-
-    // Clean up hidden video element
-    document.body.removeChild(vid);
-  });
-
-  // In case the video fails to load or seek, remove hidden video after some timeout
-  setTimeout(() => {
-    if (document.body.contains(vid)) {
-      document.body.removeChild(vid);
-    }
-  }, 5000);
-}
 
 function handleFiles(files) {
   if (!files.length) return;
@@ -139,6 +84,7 @@ function handleFiles(files) {
       videoPreview.src = URL.createObjectURL(f);
       videoPreview.load();
 
+      // Reset clipsData - will fill on loadedmetadata
       clipsData = [];
 
       videoPreview.onloadedmetadata = () => {
@@ -147,18 +93,20 @@ function handleFiles(files) {
         videoProgress.max = videoPreview.duration;
         videoProgress.value = 0;
 
-        // Initialize clipsData so timeline can render clips
+        // Initialize clipsData with single full-length clip for main video
         clipsData = [{ startTime: 0, endTime: videoPreview.duration, volume: 1 }];
 
         rebuildTimeline();
       };
 
-      showVideoThumbnail(f);  // Show preview below drag area
-
       break;
     }
     if (f.type.startsWith('audio/')) {
-      clipsData.push({ startTime: 0, endTime: videoPreview.duration || 10, volume: 1 });
+      // Only add audio clip if video duration is known
+      if (videoPreview.duration) {
+        clipsData.push({ startTime: 0, endTime: videoPreview.duration, volume: 1 });
+        rebuildTimeline();
+      }
     }
   }
 }
@@ -174,9 +122,9 @@ closeExportModalBtn.addEventListener('click', () => exportModal.classList.add('h
 
 confirmExportBtn.addEventListener('click', async () => {
   const start = parseTime(startTimeInput.value),
-        end   = parseTime(endTimeInput.value),
-        dur   = videoPreview.duration;
-  if (isNaN(start)||isNaN(end)||start>=end||end>dur)
+    end = parseTime(endTimeInput.value),
+    dur = videoPreview.duration;
+  if (isNaN(start) || isNaN(end) || start >= end || end > dur)
     return alert('Enter valid start/end times within video.');
   exportModal.classList.add('hidden');
   openExportModalBtn.disabled = true;
@@ -192,34 +140,34 @@ confirmExportBtn.addEventListener('click', async () => {
       resolution: resolutionSelect.value,
       quality: qualitySelect.value,
       audioBitrate: audioBitrateSelect.value,
-      onProgress: pct => { progressBar.value=pct; progressText.textContent=`Processing: ${pct}%`; },
+      onProgress: pct => { progressBar.value = pct; progressText.textContent = `Processing: ${pct}%`; },
       onComplete: blobUrl => {
         progressText.textContent = 'Export complete!';
         progressBar.value = 100;
         const a = document.createElement('a');
-        a.href = blobUrl; a.download='quickcut_output.mp4'; document.body.appendChild(a); a.click();
+        a.href = blobUrl; a.download = 'quickcut_output.mp4'; document.body.appendChild(a); a.click();
         a.remove(); URL.revokeObjectURL(blobUrl);
         resetUI();
       },
-      onError: err => { alert('Export error: '+err.message); resetUI(); }
+      onError: err => { alert('Export error: ' + err.message); resetUI(); }
     });
-  } catch(e) {
-    alert('Unexpected: '+e.message);
+  } catch (e) {
+    alert('Unexpected: ' + e.message);
     resetUI();
   }
 });
 cancelBtn.addEventListener('click', async () => {
-  openExportModalBtn.disabled=false; cancelBtn.disabled=true;
-  progressText.textContent='Cancelling...';
-  try { await cancelProcessing(); } catch{} 
+  openExportModalBtn.disabled = false; cancelBtn.disabled = true;
+  progressText.textContent = 'Cancelling...';
+  try { await cancelProcessing(); } catch { }
   resetUI();
 });
-function resetUI(){
-  progressBar.style.display='none';
-  progressText.style.display='none';
-  openExportModalBtn.disabled=false;
-  cancelBtn.disabled=true;
-  openExportModalBtn.textContent='📤 Export';
+function resetUI() {
+  progressBar.style.display = 'none';
+  progressText.style.display = 'none';
+  openExportModalBtn.disabled = false;
+  cancelBtn.disabled = true;
+  openExportModalBtn.textContent = '📤 Export';
 }
 
 //
@@ -228,8 +176,8 @@ function resetUI(){
 playPauseBtn.addEventListener('click', () =>
   videoPreview.paused ? videoPreview.play() : videoPreview.pause()
 );
-videoPreview.addEventListener('play', () => playPauseBtn.textContent='⏸️');
-videoPreview.addEventListener('pause',() => playPauseBtn.textContent='▶️');
+videoPreview.addEventListener('play', () => playPauseBtn.textContent = '⏸️');
+videoPreview.addEventListener('pause', () => playPauseBtn.textContent = '▶️');
 
 rewindBtn.addEventListener('click', () =>
   videoPreview.currentTime = Math.max(0, videoPreview.currentTime - 5)
@@ -244,44 +192,43 @@ videoPreview.addEventListener('timeupdate', () => {
     videoProgress.value = videoPreview.currentTime;
   }
 });
-videoProgress.addEventListener('pointerdown',()=>isDraggingVideoProgress=true);
-videoProgress.addEventListener('input',()=>currentTimeDisplay.textContent=formatTime(videoProgress.value));
-videoProgress.addEventListener('pointerup', ()=>{ videoPreview.currentTime=videoProgress.value; isDraggingVideoProgress=false; });
-videoProgress.addEventListener('pointercancel',()=>isDraggingVideoProgress=false);
-videoProgress.addEventListener('pointerleave',()=>isDraggingVideoProgress=false);
+videoProgress.addEventListener('pointerdown', () => isDraggingVideoProgress = true);
+videoProgress.addEventListener('input', () => currentTimeDisplay.textContent = formatTime(videoProgress.value));
+videoProgress.addEventListener('pointerup', () => { videoPreview.currentTime = videoProgress.value; isDraggingVideoProgress = false; });
+videoProgress.addEventListener('pointercancel', () => isDraggingVideoProgress = false);
+videoProgress.addEventListener('pointerleave', () => isDraggingVideoProgress = false);
 
 //
 // === WHEN VIDEO LOADS, BUILD TIMELINE ===
 //
-videoPreview.addEventListener('loadedmetadata', () =>{
+videoPreview.addEventListener('loadedmetadata', () => {
   totalDurationDisplay.textContent = formatTime(videoPreview.duration);
   currentTimeDisplay.textContent = '0:00';
   videoProgress.max = videoPreview.duration;
   videoProgress.value = 0;
+  if (clipsData.length === 0) {
+    clipsData = [{ startTime: 0, endTime: videoPreview.duration, volume: 1 }];
+  }
   rebuildTimeline();
 });
 
 //
-// === TIE INTO timeline.js ===
+// === INIT timeline instance ===
 //
 let tlInstance = null;
 
-function rebuildTimeline(){
-  console.log('Rebuilding timeline...');
-  console.log({ multiTracks, videoTrack, audioTrack, clipsData });
-  // clear out any old instance
-  if(tlInstance && tlInstance.destroy) tlInstance.destroy();
+function rebuildTimeline() {
+  if (tlInstance && tlInstance.destroy) tlInstance.destroy();
   tlInstance = initTimeline({
     videoElement: videoPreview,
     timelineTrack: multiTracks,
     videoTrack,
     audioTrack,
     clipsData,
-    onTimesChanged: (idx,start,end,volume)=>{
-      // keep main start/end inputs in sync with clip 0
-      if(idx===0){
+    onTimesChanged: (idx, start, end, volume) => {
+      if (idx === 0) {
         startTimeInput.value = formatTime(start);
-        endTimeInput.value   = formatTime(end);
+        endTimeInput.value = formatTime(end);
       }
       videoPreview.volume = volume;
     }
