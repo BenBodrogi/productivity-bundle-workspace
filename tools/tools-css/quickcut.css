@@ -207,7 +207,7 @@ body, html {
 
 /* timeline container (bottom half) */
 .timeline-container {
-  flex: 0 0 220px; /* fixed smaller height */
+  flex: 0 0 300px; /* fixed smaller height */
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
@@ -468,15 +468,9 @@ select:focus {
 }
 
 .preview-thumbnail {
-  margin-top: 15px;
-  width: 160px; /* thumbnail width */
-  height: 90px; /* 16:9 aspect ratio */
-  background-color: #222;
-  border-radius: 6px;
-  overflow: hidden;
-  display: none; /* hidden by default */
-  box-shadow: 0 0 5px rgba(123, 93, 235, 0.7);
-  cursor: pointer;
+  pointer-events: none; /* disables all mouse interaction */
+  user-select: none;
+  opacity: 0.9; /* optional: makes it feel “passive” */
 }
 
 .preview-thumbnail img {

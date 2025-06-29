@@ -27,7 +27,6 @@ const forwardBtn          = document.getElementById('forwardBtn');
 
 const currentTimeDisplay  = document.getElementById('currentTime');
 const totalDurationDisplay= document.getElementById('totalDuration');
-const previewResolution   = document.getElementById('previewResolution');
 const videoProgress       = document.getElementById('videoProgress');
 const volumeSlider        = document.getElementById('volumeSlider');
 
@@ -56,11 +55,13 @@ let clipsData = [
 //
 // === SIMPLE HELPERS ===
 //
-function formatTime(sec) {
-  if (isNaN(sec) || sec < 0) return '0:00';
-  const m = Math.floor(sec/60), s = Math.floor(sec%60);
-  return `${m}:${s.toString().padStart(2,'0')}`;
+function formatTime(seconds) {
+  if (isNaN(seconds)) return '0:00';
+  const minutes = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60).toString().padStart(2, '0');
+  return `${minutes}:${secs}`;
 }
+
 function parseTime(str) {
   const p = str.split(':'), m = +p[0], s = +p[1];
   return (p.length===2 && !isNaN(m)&&!isNaN(s)&&s<60) ? m*60+s : NaN;
@@ -120,12 +121,6 @@ function showVideoThumbnail(file) {
 
     // Clean up hidden video element
     document.body.removeChild(vid);
-
-    // Clicking thumbnail loads video into main preview
-    previewThumbnail.onclick = () => {
-      videoPreview.src = vid.src;
-      videoPreview.load();
-    };
   });
 
   // In case the video fails to load or seek, remove hidden video after some timeout
@@ -147,8 +142,8 @@ function handleFiles(files) {
       clipsData = [];
 
       videoPreview.onloadedmetadata = () => {
-        clipsData = [{ startTime: 0, endTime: videoPreview.duration, volume: 1 }];
-        rebuildTimeline();
+        totalDuration.textContent = formatTime(videoPreview.duration || 0);
+        videoProgress.max = videoPreview.duration || 0;
       };
 
       showVideoThumbnail(f);  // Show preview below drag area
@@ -248,16 +243,6 @@ videoProgress.addEventListener('pointerup', ()=>{ videoPreview.currentTime=video
 videoProgress.addEventListener('pointercancel',()=>isDraggingVideoProgress=false);
 videoProgress.addEventListener('pointerleave',()=>isDraggingVideoProgress=false);
 
-previewResolution.addEventListener('change', ()=>{
-  const v=previewResolution.value;
-  if(v!=='original') {
-    const [w,h]=v.split('x').map(n=>+n);
-    videoPreview.width=w; videoPreview.height=h;
-  } else {
-    videoPreview.removeAttribute('width'); videoPreview.removeAttribute('height');
-  }
-});
-
 //
 // === WHEN VIDEO LOADS, BUILD TIMELINE ===
 //
@@ -273,6 +258,12 @@ videoPreview.addEventListener('loadedmetadata', () =>{
 // === TIE INTO timeline.js ===
 //
 let tlInstance = null;
+
+videoPreview.onloadedmetadata = () => {
+  tlInstance = new Timeline(videoPreview); // or whatever it is
+  rebuildTimeline(); // don't pass undefined ref
+};
+
 function rebuildTimeline(){
   // clear out any old instance
   if(tlInstance && tlInstance.destroy) tlInstance.destroy();
