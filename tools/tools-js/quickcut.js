@@ -33,6 +33,12 @@ const exportModal = document.getElementById('exportModal');
 const closeExportModalBtn = document.getElementById('closeExportModalBtn');
 const confirmExportBtn = document.getElementById('confirmExportBtn');
 
+const videoTrack = document.getElementById('videoTrack');
+const audioTrack = document.getElementById('audioTrack');
+
+const importArea = document.getElementById('importArea');
+const fileInput = document.getElementById('fileInput');
+
 const MIN_ZOOM = 0.5;
 const MAX_ZOOM = 3;
 let zoomFactor = 1;
@@ -48,11 +54,10 @@ multiTracks.addEventListener('wheel', e => {
   zoomFactor -= delta * 0.1; // zoom sensitivity
   zoomFactor = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, zoomFactor));
 
-  // Update timeline width
   multiTracks.style.width = `${BASE_WIDTH * zoomFactor}px`;
 
-  // Update clips positions and widths scaled by zoom
-  updateAllClipsPositionsAndSizes(zoomFactor);
+  // Instead of only updating positions, rebuild clips UI for accurate sizing
+  buildClips();
 });
 
 function updateAllClipsPositionsAndSizes(zoom) {
@@ -76,7 +81,6 @@ function updateAllClipsPositionsAndSizes(zoom) {
   });
 }
 
-
 let videoFile;
 let isDraggingVideoProgress = false;
 
@@ -93,12 +97,13 @@ let timelineInstances = [];
 
 // Clear and build clip elements dynamically inside timelineTrack
 function buildClips() {
-  timelineTrack.innerHTML = ''; // Clear all
+  videoTrack.innerHTML = '';
+  audioTrack.innerHTML = '';
 
   clipsData.forEach((clip, index) => {
     // Create clip div
     const clipDiv = document.createElement('div');
-    clipDiv.classList.add('clip', index === 0 ? 'video-track' : 'audio-track');
+    clipDiv.classList.add('clip');
     clipDiv.style.position = 'absolute';
 
     // Create handles
@@ -118,7 +123,11 @@ function buildClips() {
     clipDiv.appendChild(handleRight);
     clipDiv.appendChild(volumeControl);
 
-    timelineTrack.appendChild(clipDiv);
+    if (index === 0) {
+      videoTrack.appendChild(clipDiv); // video clip in video track
+    } else {
+      audioTrack.appendChild(clipDiv); // audio clips in audio track
+    }
 
     // Initialize timeline per clip, pass all these elements
     const timeline = initTimeline({
@@ -165,6 +174,56 @@ videoPreview.addEventListener('loadedmetadata', () => {
   // Build clip elements and initialize timelines for each clip
   buildClips();
 });
+
+// Clicking opens file dialog
+importArea.addEventListener('click', () => fileInput.click());
+
+// Drag & drop events
+importArea.addEventListener('dragover', (e) => {
+  e.preventDefault();
+  importArea.classList.add('dragover');
+});
+
+importArea.addEventListener('dragleave', (e) => {
+  e.preventDefault();
+  importArea.classList.remove('dragover');
+});
+
+importArea.addEventListener('drop', (e) => {
+  e.preventDefault();
+  importArea.classList.remove('dragover');
+  handleFiles(e.dataTransfer.files);
+});
+
+// File input change
+fileInput.addEventListener('change', () => {
+  handleFiles(fileInput.files);
+});
+
+function handleFiles(files) {
+  if (!files || files.length === 0) return;
+
+  for (const file of files) {
+    if (file.type.startsWith('video/')) {
+      // Load video - for simplicity, let's replace the main video
+      videoFile = file;
+      videoPreview.src = URL.createObjectURL(file);
+      videoPreview.load();
+      // Reset timeline data for new video
+      clipsData = [{ startTime: 0, endTime: videoPreview.duration || 10, volume: 1 }];
+      buildClips();
+      break; // Only one main video clip allowed here
+    } else if (file.type.startsWith('audio/')) {
+      // Add new audio clip with default timings and volume
+      clipsData.push({
+        startTime: 0,
+        endTime: videoPreview.duration || 10,
+        volume: 1
+      });
+      buildClips();
+    }
+  }
+}
 
 // ---------------------------------
 // Time helpers mm:ss <-> seconds

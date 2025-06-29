@@ -470,3 +470,15 @@ select:focus {
   user-select: none;
   box-shadow: 0 0 5px rgba(10, 132, 255, 0.8);
 }
+
+.import-area {
+  border: 2px dashed #888;
+  padding: 40px;
+  text-align: center;
+  cursor: pointer;
+  user-select: none;
+}
+.import-area.dragover {
+  border-color: #44aaff;
+  background-color: #f0faff;
+}
