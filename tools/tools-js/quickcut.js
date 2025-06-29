@@ -129,6 +129,18 @@ function handleFiles(files) {
       videoClipsData = [];
       audioClipsData = [];
 
+      videoPreview.onloadedmetadata = () => {
+        const dur = videoPreview.duration;
+        totalDurationDisplay.textContent = formatTime(dur);
+        currentTimeDisplay.textContent = '0:00';
+        videoProgress.max = dur;
+        videoProgress.value = 0;
+
+        videoClipsData = [{ startTime: 0, endTime: dur, volume: 1 }];
+        audioClipsData = [{ startTime: 0, endTime: dur, volume: 1 }];
+
+        rebuildTimeline();
+      };
       break;
     }
     else if (f.type.startsWith('audio/')) {
