@@ -64,7 +64,7 @@ function showThumbnail(imageDataUrl) {
 const video = document.getElementById('videoPreview');
 
 video.addEventListener('loadeddata', () => {
-  generateThumbnail(video, 1); // Capture at 1 second
+  generateThumbnail(video, 0); // Capture at 1 second
 });
 
 function generateThumbnail(video, timeInSeconds) {
