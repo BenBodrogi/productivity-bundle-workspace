@@ -1,6 +1,9 @@
 import { processExport, cancelProcessing } from './ffmpeg-logic.js';
 import { initTimeline } from './timeline.js';
 
+videoClipsData = [];
+audioClipsData = [];
+
 //
 // === UI ELEMENTS ===
 //
@@ -49,30 +52,14 @@ let clipsData = [];
 
 const previewThumbnail = document.getElementById('previewThumbnail');
 
-function showThumbnail(videoElement) {
+function showThumbnail(imageDataUrl) {
   const previewContainer = document.getElementById('previewThumbnail');
   previewContainer.innerHTML = ''; // Clear any previous thumbnail
-
-  const canvas = document.createElement('canvas');
-  canvas.width = 160;
-  canvas.height = 90;
-  const ctx = canvas.getContext('2d');
-
-  // Seek to start before capturing
-  const originalTime = videoElement.currentTime;
-  videoElement.currentTime = 0;
-
-  videoElement.addEventListener('seeked', function onSeeked() {
-    videoElement.removeEventListener('seeked', onSeeked);
-    ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
-    const img = document.createElement('img');
-    img.src = canvas.toDataURL('image/png');
-    previewContainer.appendChild(img);
-
-    // Optionally restore original time
-    videoElement.currentTime = originalTime;
-  });
+  const img = document.createElement('img');
+  img.src = imageDataUrl;
+  previewContainer.appendChild(img);
 }
+
 
 const video = document.getElementById('videoPreview');
 
@@ -141,21 +128,6 @@ function handleFiles(files) {
       // Reset clip data on new video import
       videoClipsData = [];
       audioClipsData = [];
-      let tlInstance = null;
-
-      videoPreview.onloadedmetadata = () => {
-        const dur = videoPreview.duration;
-        totalDurationDisplay.textContent = formatTime(dur);
-        currentTimeDisplay.textContent = '0:00';
-        videoProgress.max = dur;
-        videoProgress.value = 0;
-
-        // Video clip occupies full duration by default
-        videoClipsData = [{ startTime: 0, endTime: dur, volume: 1 }];
-
-        // Rebuild timeline with fresh data
-        rebuildTimeline();
-      };
 
       break;
     }
