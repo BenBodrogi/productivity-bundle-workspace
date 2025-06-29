@@ -1,8 +1,8 @@
 import { processExport, cancelProcessing } from './ffmpeg-logic.js';
 import { initTimeline } from './timeline.js';
 
-videoClipsData = [];
-audioClipsData = [];
+let videoClipsData = [];
+let audioClipsData = [];
 
 //
 // === UI ELEMENTS ===
