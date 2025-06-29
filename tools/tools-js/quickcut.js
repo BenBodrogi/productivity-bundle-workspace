@@ -20,19 +20,13 @@ const qualitySelect = document.getElementById('qualitySelect');
 const playPauseBtn = document.getElementById('playPauseBtn');
 const rewindBtn = document.getElementById('rewindBtn');
 const forwardBtn = document.getElementById('forwardBtn');
-const volumeSlider = document.getElementById('volumeSlider');
-
+// Removed global volumeSlider (optional)
 const currentTimeDisplay = document.getElementById('currentTime');
 const totalDurationDisplay = document.getElementById('totalDuration');
-
 const previewResolution = document.getElementById('previewResolution');
 const videoProgress = document.getElementById('videoProgress');
 
 const timelineTrack = document.querySelector('.timeline-track');
-const clipElement = document.querySelector('.clip');
-const handleLeft = document.querySelector('.handle-left');
-const handleRight = document.querySelector('.handle-right');
-const volumeKnob = document.querySelector('.volume-knob');
 
 const exportModal = document.getElementById('exportModal');
 const closeExportModalBtn = document.getElementById('closeExportModalBtn');
@@ -40,6 +34,92 @@ const confirmExportBtn = document.getElementById('confirmExportBtn');
 
 let videoFile;
 let isDraggingVideoProgress = false;
+
+// Keep clips data array, add volume for each clip
+let clipsData = [
+  { startTime: 0, endTime: 10, volume: 1 },
+  { startTime: 12, endTime: 20, volume: 0.8 }
+];
+
+// Hold timeline instances for each clip
+let timelineInstances = [];
+
+// --------- Utility functions (formatTime, parseTime, clamp) remain unchanged ---------
+
+// Clear and build clip elements dynamically inside timelineTrack
+function buildClips() {
+  timelineTrack.innerHTML = ''; // Clear all
+
+  clipsData.forEach((clip, index) => {
+    // Create clip div
+    const clipDiv = document.createElement('div');
+    clipDiv.classList.add('clip', index === 0 ? 'video-track' : 'audio-track');
+    clipDiv.style.position = 'absolute';
+
+    // Create handles
+    const handleLeft = document.createElement('div');
+    handleLeft.classList.add('handle-left');
+    const handleRight = document.createElement('div');
+    handleRight.classList.add('handle-right');
+
+    // Create volume knob container & knob for audio clips only
+    const volumeControl = document.createElement('div');
+    volumeControl.classList.add('volume-control');
+    const volumeKnob = document.createElement('div');
+    volumeKnob.classList.add('volume-knob');
+    volumeControl.appendChild(volumeKnob);
+
+    clipDiv.appendChild(handleLeft);
+    clipDiv.appendChild(handleRight);
+    clipDiv.appendChild(volumeControl);
+
+    timelineTrack.appendChild(clipDiv);
+
+    // Initialize timeline per clip, pass all these elements
+    const timeline = initTimeline({
+      videoElement: videoPreview,
+      startTimeInput: null, // you can create or manage inputs separately if needed
+      endTimeInput: null,
+      timelineTrack,
+      clipElement: clipDiv,
+      handleLeft,
+      handleRight,
+      volumeKnob,
+      onTimesChanged: (start, end, volume) => {
+        clipsData[index].startTime = start;
+        clipsData[index].endTime = end;
+        clipsData[index].volume = volume;
+        // If you want, update the video volume accordingly here, or during playback/export
+        console.log(`Clip ${index} updated: start=${start}, end=${end}, volume=${volume}`);
+      }
+    });
+
+    timelineInstances[index] = timeline;
+
+    // Set initial positions & volume
+    clipDiv.style.left = `${timeToPixels(clip.startTime)}px`;
+    clipDiv.style.width = `${timeToPixels(clip.endTime) - timeToPixels(clip.startTime)}px`;
+    timeline.setVolume(clip.volume);
+  });
+}
+
+// Convert time to pixels helper used above
+function timeToPixels(time) {
+  const duration = videoPreview.duration || 1;
+  const trackWidth = timelineTrack.clientWidth;
+  return (time / duration) * trackWidth;
+}
+
+// When video metadata loads
+videoPreview.addEventListener('loadedmetadata', () => {
+  totalDurationDisplay.textContent = formatTime(videoPreview.duration);
+  currentTimeDisplay.textContent = formatTime(0);
+  videoProgress.max = videoPreview.duration;
+  videoProgress.value = 0;
+
+  // Build clip elements and initialize timelines for each clip
+  buildClips();
+});
 
 // ---------------------------------
 // Time helpers mm:ss <-> seconds

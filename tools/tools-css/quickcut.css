@@ -378,23 +378,41 @@ select:focus {
   background: #222;
   border-radius: 6px;
   margin-bottom: 8px;
+  overflow: visible; /* allow handles and knobs to show outside if needed */
 }
 
 .clip {
-  position: absolute; /* timeline clips are positioned absolutely */
-  top: 0;
-  height: 60px; /* total height of clip */
-  background: #0a84ff;
+  position: absolute;
+  top: 8px;
+  height: 44px;
   border-radius: 4px;
   cursor: grab;
   user-select: none;
-  display: flex;
-  flex-direction: column;
+  color: white;
+  font-size: 12px;
+  padding: 4px 8px;
   box-sizing: border-box;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  white-space: nowrap;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  flex-direction: row;
+  gap: 8px;
 }
 
-/* Handles to trim clip edges */
+/* Use different bg for video vs audio clips */
+.video-track .clip {
+  background-color: #0a84ff;
+  box-shadow: 0 2px 6px rgba(10, 132, 255, 0.8);
+}
+
+.audio-track .clip {
+  background-color: #7b5deb;
+  box-shadow: 0 2px 6px rgba(123, 93, 235, 0.8);
+}
+
+/* Handles */
 .handle-left,
 .handle-right {
   position: absolute;
@@ -417,52 +435,38 @@ select:focus {
   border-radius: 0 4px 4px 0;
 }
 
-/* Audio section takes about 30% height */
+/* Volume control container inside clip */
 .clip-audio {
   position: relative;
-  flex: 0 0 18px; /* 30% of 60px */
-  background: #003a7a;
-  border-radius: 0 0 4px 4px;
+  height: 100%;
+  width: 24px;
   display: flex;
-  justify-content: center;
   align-items: center;
-  user-select: none;
+  justify-content: center;
+  cursor: ns-resize;
 }
 
-/* Volume control container */
+/* Volume knob styling */
 .volume-control {
   position: relative;
-  height: 14px;  /* slightly smaller than audio section height */
-  width: 6px;
-  background: #1976d2;
-  border-radius: 3px;
-  cursor: ns-resize;
+  height: 40px; /* adjust height as needed */
+  width: 8px;
+  background: #555;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-/* Volume knob - draggable */
 .volume-knob {
   position: absolute;
-  bottom: 0;  /* start at full volume (bottom is 0 volume, so invert logic in JS) */
   left: 50%;
   transform: translateX(-50%);
-  width: 12px;
-  height: 8px;
-  background: #fff;
-  border-radius: 2px;
-  cursor: ns-resize;
-  box-shadow: 0 0 3px rgba(0,0,0,0.6);
+  width: 14px;
+  height: 14px;
+  background: #0af;
+  border-radius: 50%;
+  cursor: pointer;
   user-select: none;
-  touch-action: none;
-  transition: background-color 0.2s ease;
-}
-
-.volume-knob:hover,
-.volume-knob:focus {
-  background-color: #7b5deb;
-  outline: none;
-}
-
-.volume-knob:active {
-  cursor: grabbing;
-  background-color: #6139c6;
+  box-shadow: 0 0 5px rgba(10, 132, 255, 0.8);
 }

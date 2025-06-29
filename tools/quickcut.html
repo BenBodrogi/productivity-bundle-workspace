@@ -54,27 +54,24 @@
     </div>
 
     <div class="timeline-container">
+      <!-- In your timeline container, update the clip markup -->
       <div id="timeline" class="timeline-track">
-        <div id="clip" class="clip">
-          <div id="handle-left" class="handle-left" title="Trim start"></div>
-          <div id="handle-right" class="handle-right" title="Trim end"></div>
-
-          <div class="clip-video"></div>
-
-          <div class="clip-audio">
-            <div id="volume-control" class="volume-control">
-              <div id="volume-knob" class="volume-knob" title="Drag to adjust volume"></div>
-            </div>
-          </div>
+        <div class="timeline-multi-tracks">
+          <div id="videoTrack" class="track video-track timeline-track"></div>
+          <div id="audioTrack" class="track audio-track timeline-track"></div>
         </div>
       </div>
 
-      <div class="timeline-bar">
-        <label>Start (mm:ss): <input type="text" id="startTime" value="0:00" pattern="^\d+:\d{2}$" /></label>
-        <label>End (mm:ss): <input type="text" id="endTime" value="0:10" pattern="^\d+:\d{2}$" /></label>
+      <div id="audioTracksContainer" class="audio-tracks-container">
+        <!-- JS will add audio volume sliders here -->
       </div>
-    </div>
-  </div>
+
+          <!-- Video preview snippet (or thumbnail) -->
+          <div class="clip-video"></div>
+
+          <!-- AUDIO CONTROLLER PER TRACK (Below each track container) -->
+        </div>
+      </div>
 
   <!-- Export Settings Modal -->
   <div id="exportModal" class="modal hidden">
