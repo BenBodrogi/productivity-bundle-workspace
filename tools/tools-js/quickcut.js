@@ -53,6 +53,19 @@ let clipsData = [
   { startTime: 12, endTime: 20, volume: 0.8 }  // an audio clip
 ];
 
+// Initialize timeline
+const timeline = initTimeline({
+  videoElement: videoPreview,
+  timelineTrack,
+  clipsData,
+  onTimesChanged: (clipIndex, start, end, volume) => {
+    clipsData[clipIndex].startTime = start;
+    clipsData[clipIndex].endTime = end;
+    clipsData[clipIndex].volume = volume;
+    console.log(`Clip ${clipIndex} changed: start=${start}, end=${end}, volume=${volume}`);
+  }
+});
+
 //
 // === SIMPLE HELPERS ===
 //
