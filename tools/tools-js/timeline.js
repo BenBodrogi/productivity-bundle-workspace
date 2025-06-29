@@ -1,43 +1,38 @@
 export function initTimeline({
   videoElement,
-  timelineTrack,  // container for the timeline (multi-track)
-  videoTrack,     // video clips track element
-  audioTrack,     // audio clips track element
-  clipsData,      // array of {startTime, endTime, volume}
-  onTimesChanged  // callback: (clipIndex, start, end, volume) => void
+  timelineTrack,
+  videoTrack,
+  audioTrack,
+  videoClipsData = [],
+  audioClipsData = [],
+  onTimesChanged
 }) {
   const clips = [];
 
-  // Get width dynamically on each relevant action (to support resizing)
   function getBaseWidth() {
     const w = timelineTrack.clientWidth;
     if (!w || w < 10) console.warn('timelineTrack width too small:', w);
     return w || 1;
   }
 
-  // Clamp helper
-  function clamp(v,min,max){ return Math.min(max,Math.max(min,v)); }
-
-  // Convert time to pixel position based on current width
-  function timeToPixels(t){
+  function clamp(v, min, max) { return Math.min(max, Math.max(min, v)); }
+  function timeToPixels(t) {
     const dur = videoElement.duration || 1;
-    return (t/dur)*getBaseWidth();
+    return (t / dur) * getBaseWidth();
+  }
+  function pixelsToTime(px) {
+    const dur = videoElement.duration || 1;
+    return (px / getBaseWidth()) * dur;
   }
 
-  // Convert pixel position to time
-  function pixelsToTime(px){
-    const dur = videoElement.duration || 1;
-    return (px/getBaseWidth())*dur;
-  }
-
-  // Build all clip elements
   function build() {
     videoTrack.innerHTML = '';
     audioTrack.innerHTML = '';
     clips.length = 0;
 
-    clipsData.forEach((data, index) => {
-      const container = index === 0 ? videoTrack : audioTrack;
+    // Helper to create clip elements
+    function createClipElement(data, trackType, index) {
+      const container = trackType === 'video' ? videoTrack : audioTrack;
       const clip = document.createElement('div');
       clip.className = 'clip';
       clip.dataset.start = data.startTime;
@@ -47,11 +42,9 @@ export function initTimeline({
       clip.style.width = `${timeToPixels(data.endTime) - timeToPixels(data.startTime)}px`;
       clip.style.opacity = 0.5 + 0.5 * data.volume;
 
-      // Create handles
       const hl = document.createElement('div'); hl.className = 'handle-left';
       const hr = document.createElement('div'); hr.className = 'handle-right';
 
-      // Create volume control knob
       const vc = document.createElement('div'); vc.className = 'volume-control';
       const knob = document.createElement('div'); knob.className = 'volume-knob';
       vc.appendChild(knob);
@@ -59,7 +52,7 @@ export function initTimeline({
       clip.append(hl, hr, vc);
       container.appendChild(clip);
 
-      clips.push({
+      const clipObj = {
         clip, hl, hr, knob, data,
         dragging: false,
         resizingLeft: false,
@@ -69,24 +62,37 @@ export function initTimeline({
         startLeft: 0,
         startWidth: 0,
         startY: 0,
-        startTop: 0
-      });
-    });
+        startTop: 0,
+        trackType,
+        index
+      };
+
+      clips.push(clipObj);
+
+      // Attach mouse down handlers for this clip
+      attachClipHandlers(clipObj);
+    }
+
+    // Create video clips
+    videoClipsData.forEach((data, i) => createClipElement(data, 'video', i));
+
+    // Create audio clips
+    audioClipsData.forEach((data, i) => createClipElement(data, 'audio', i));
   }
 
-  // Update UI from data for a clip object
+  // Update a single clip UI from data
   function updateClipUI(obj) {
     const left = timeToPixels(obj.data.startTime);
     const right = timeToPixels(obj.data.endTime);
     obj.clip.style.left = `${left}px`;
     obj.clip.style.width = `${right - left}px`;
 
-    const h = obj.clip.clientHeight || 40; // fallback height
+    const h = obj.clip.clientHeight || 40;
     obj.knob.style.top = `${h * (1 - clamp(obj.data.volume, 0, 1))}px`;
     obj.clip.style.opacity = 0.5 + 0.5 * obj.data.volume;
   }
 
-  // Update data from UI for a clip object, fire callback
+  // Update data from UI for a clip object and call callback
   function updateData(obj) {
     const left = parseFloat(obj.clip.style.left) || 0;
     const width = parseFloat(obj.clip.style.width) || 0;
@@ -102,10 +108,43 @@ export function initTimeline({
     obj.data.volume = clamp(1 - (knobY / h), 0, 1);
 
     if (onTimesChanged)
-      onTimesChanged(clips.indexOf(obj), s, e, obj.data.volume);
+      onTimesChanged(obj.trackType, obj.index, s, e, obj.data.volume);
   }
 
-  // Attach mouse events for dragging/resizing/volume knob
+  // Attach event listeners for dragging, resizing, volume control
+  function attachClipHandlers(o) {
+    o.clip.addEventListener('mousedown', e => {
+      if ([o.hl, o.hr, o.knob].includes(e.target)) return;
+      o.dragging = true;
+      o.startX = e.clientX;
+      o.startLeft = parseFloat(o.clip.style.left) || 0;
+      document.body.style.userSelect = 'none';
+    });
+    o.hl.addEventListener('mousedown', e => {
+      o.resizingLeft = true;
+      o.startX = e.clientX;
+      o.startLeft = parseFloat(o.clip.style.left) || 0;
+      o.startWidth = parseFloat(o.clip.style.width) || 0;
+      document.body.style.userSelect = 'none';
+      e.stopPropagation();
+    });
+    o.hr.addEventListener('mousedown', e => {
+      o.resizingRight = true;
+      o.startX = e.clientX;
+      o.startWidth = parseFloat(o.clip.style.width) || 0;
+      document.body.style.userSelect = 'none';
+      e.stopPropagation();
+    });
+    o.knob.addEventListener('mousedown', e => {
+      o.adjustVol = true;
+      o.startY = e.clientY;
+      o.startTop = o.knob.offsetTop;
+      document.body.style.userSelect = 'none';
+      e.stopPropagation();
+    });
+  }
+
+  // Attach document-level listeners for dragging/resizing/volume adjustment
   function attachEvents() {
     document.addEventListener('mousemove', e => {
       clips.forEach(o => {
@@ -152,47 +191,14 @@ export function initTimeline({
       });
       document.body.style.userSelect = '';
     });
-
-    clips.forEach(o => {
-      o.clip.addEventListener('mousedown', e => {
-        if ([o.hl, o.hr, o.knob].includes(e.target)) return;
-        o.dragging = true;
-        o.startX = e.clientX;
-        o.startLeft = parseFloat(o.clip.style.left) || 0;
-        document.body.style.userSelect = 'none';
-      });
-      o.hl.addEventListener('mousedown', e => {
-        o.resizingLeft = true;
-        o.startX = e.clientX;
-        o.startLeft = parseFloat(o.clip.style.left) || 0;
-        o.startWidth = parseFloat(o.clip.style.width) || 0;
-        document.body.style.userSelect = 'none';
-        e.stopPropagation();
-      });
-      o.hr.addEventListener('mousedown', e => {
-        o.resizingRight = true;
-        o.startX = e.clientX;
-        o.startWidth = parseFloat(o.clip.style.width) || 0;
-        document.body.style.userSelect = 'none';
-        e.stopPropagation();
-      });
-      o.knob.addEventListener('mousedown', e => {
-        o.adjustVol = true;
-        o.startY = e.clientY;
-        o.startTop = o.knob.offsetTop;
-        document.body.style.userSelect = 'none';
-        e.stopPropagation();
-      });
-    });
   }
 
   function destroy() {
     timelineTrack.innerHTML = '';
     clips.length = 0;
-    // Optionally: remove event listeners here if needed
+    // Optionally detach document event listeners here if you want full cleanup
   }
 
-  // Initialize timeline build and events
   build();
   attachEvents();
 

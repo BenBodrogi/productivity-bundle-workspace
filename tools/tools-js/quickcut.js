@@ -84,27 +84,30 @@ function handleFiles(files) {
       videoPreview.src = URL.createObjectURL(f);
       videoPreview.load();
 
-      // Reset clipsData - will fill on loadedmetadata
-      clipsData = [];
+      // Reset clip data on new video import
+      videoClipsData = [];
+      audioClipsData = [];
 
       videoPreview.onloadedmetadata = () => {
-        totalDurationDisplay.textContent = formatTime(videoPreview.duration);
+        const dur = videoPreview.duration;
+        totalDurationDisplay.textContent = formatTime(dur);
         currentTimeDisplay.textContent = '0:00';
-        videoProgress.max = videoPreview.duration;
+        videoProgress.max = dur;
         videoProgress.value = 0;
 
-        // Initialize clipsData with single full-length clip for main video
-        clipsData = [{ startTime: 0, endTime: videoPreview.duration, volume: 1 }];
+        // Video clip occupies full duration by default
+        videoClipsData = [{ startTime: 0, endTime: dur, volume: 1 }];
 
+        // Rebuild timeline with fresh data
         rebuildTimeline();
       };
 
       break;
     }
-    if (f.type.startsWith('audio/')) {
-      // Only add audio clip if video duration is known
+    else if (f.type.startsWith('audio/')) {
+      // Only add audio clip if video duration known
       if (videoPreview.duration) {
-        clipsData.push({ startTime: 0, endTime: videoPreview.duration, volume: 1 });
+        audioClipsData.push({ startTime: 0, endTime: videoPreview.duration, volume: 1 });
         rebuildTimeline();
       }
     }
@@ -219,18 +222,24 @@ let tlInstance = null;
 
 function rebuildTimeline() {
   if (tlInstance && tlInstance.destroy) tlInstance.destroy();
+
   tlInstance = initTimeline({
     videoElement: videoPreview,
     timelineTrack: multiTracks,
     videoTrack,
     audioTrack,
-    clipsData,
-    onTimesChanged: (idx, start, end, volume) => {
-      if (idx === 0) {
+    videoClipsData,
+    audioClipsData,
+    onTimesChanged: (trackType, idx, start, end, volume) => {
+      // trackType: 'video' or 'audio'
+      if (trackType === 'video' && idx === 0) {
         startTimeInput.value = formatTime(start);
         endTimeInput.value = formatTime(end);
       }
-      videoPreview.volume = volume;
+      // Optionally: adjust video volume only when video clip changes
+      if(trackType === 'video'){
+        videoPreview.volume = volume;
+      }
     }
   });
 }
