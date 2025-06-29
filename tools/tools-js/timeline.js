@@ -41,6 +41,24 @@ export function initTimeline({
     return (px / trackWidth) * duration;
   }
 
+  // Format time seconds -> "m:ss"
+  function formatTime(sec) {
+    if (isNaN(sec) || sec < 0) return '0:00';
+    const m = Math.floor(sec / 60);
+    const s = Math.floor(sec % 60);
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  }
+
+  // Parse "m:ss" -> seconds
+  function parseTime(str) {
+    const parts = str.split(':');
+    if (parts.length !== 2) return NaN;
+    const m = parseInt(parts[0], 10);
+    const s = parseInt(parts[1], 10);
+    if (isNaN(m) || isNaN(s) || s >= 60 || m < 0 || s < 0) return NaN;
+    return m * 60 + s;
+  }
+
   // Update clip position and width from start/end inputs
   function updateClipFromInputs() {
     const startTime = clamp(parseTime(startTimeInput.value), 0, videoElement.duration);
@@ -69,39 +87,23 @@ export function initTimeline({
     if (onTimesChanged) onTimesChanged(startTime, endTime, getVolume());
   }
 
-  // Format time seconds -> "m:ss"
-  function formatTime(sec) {
-    if (isNaN(sec) || sec < 0) return '0:00';
-    const m = Math.floor(sec / 60);
-    const s = Math.floor(sec % 60);
-    return `${m}:${s.toString().padStart(2, '0')}`;
-  }
-
-  // Parse "m:ss" -> seconds
-  function parseTime(str) {
-    const parts = str.split(':');
-    if (parts.length !== 2) return NaN;
-    const m = parseInt(parts[0], 10);
-    const s = parseInt(parts[1], 10);
-    if (isNaN(m) || isNaN(s) || s >= 60 || m < 0 || s < 0) return NaN;
-    return m * 60 + s;
-  }
-
   // Volume knob logic
+
+  // Get volume (0..1) from knob vertical position relative to clip
   function getVolume() {
-    // Volume knob vertical position relative to clip height (0 = min, 1 = max)
     const clipHeight = clipElement.clientHeight;
     const knobTop = volumeKnob.offsetTop;
+    // Invert: top=0 volume=1, bottom=clipHeight volume=0
     return clamp(1 - (knobTop / clipHeight), 0, 1);
   }
 
+  // Set volume knob vertical position based on volume 0..1
   function setVolume(volume) {
     const clipHeight = clipElement.clientHeight;
     const knobPos = clipHeight * (1 - clamp(volume, 0, 1));
     volumeKnob.style.top = `${knobPos}px`;
 
     if (onTimesChanged) {
-      // Provide volume update callback
       const startTime = parseTime(startTimeInput.value);
       const endTime = parseTime(endTimeInput.value);
       onTimesChanged(startTime, endTime, volume);
@@ -148,7 +150,7 @@ export function initTimeline({
     e.stopPropagation();
   });
 
-  // Mouse move
+  // Mouse move handler
   document.addEventListener('mousemove', e => {
     if (isDraggingClip) {
       const deltaX = e.clientX - dragStartX;

@@ -310,7 +310,9 @@ const timeline = initTimeline({
   handleRight,
   volumeKnob,
   onTimesChanged: (start, end, volume) => {
-    // Update your preview or export params if needed
-    // e.g., videoPreview.volume = volume;
+    // update your video element volume and time inputs accordingly
+    videoPreview.volume = volume;
+    startTimeInput.value = formatTime(start);
+    endTimeInput.value = formatTime(end);
   }
 });

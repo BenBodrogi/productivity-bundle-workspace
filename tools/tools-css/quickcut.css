@@ -381,47 +381,88 @@ select:focus {
 }
 
 .clip {
-  position: absolute;
-  top: 10px;
-  left: 10%;
-  width: 40%;
-  height: 40px;
+  position: absolute; /* timeline clips are positioned absolutely */
+  top: 0;
+  height: 60px; /* total height of clip */
   background: #0a84ff;
   border-radius: 4px;
   cursor: grab;
   user-select: none;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+}
+
+/* Handles to trim clip edges */
+.handle-left,
+.handle-right {
+  position: absolute;
+  top: 0;
+  width: 10px;
+  height: 100%;
+  background: #004a9f;
+  cursor: ew-resize;
+  border-radius: 4px;
+  z-index: 10;
 }
 
 .handle-left {
-  position: absolute;
   left: 0;
-  top: 0;
-  width: 10px;
-  height: 100%;
-  background: #004a9f;
   border-radius: 4px 0 0 4px;
-  cursor: ew-resize;
 }
 
 .handle-right {
-  position: absolute;
   right: 0;
-  top: 0;
-  width: 10px;
-  height: 100%;
-  background: #004a9f;
   border-radius: 0 4px 4px 0;
-  cursor: ew-resize;
 }
 
+/* Audio section takes about 30% height */
+.clip-audio {
+  position: relative;
+  flex: 0 0 18px; /* 30% of 60px */
+  background: #003a7a;
+  border-radius: 0 0 4px 4px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  user-select: none;
+}
+
+/* Volume control container */
+.volume-control {
+  position: relative;
+  height: 14px;  /* slightly smaller than audio section height */
+  width: 6px;
+  background: #1976d2;
+  border-radius: 3px;
+  cursor: ns-resize;
+}
+
+/* Volume knob - draggable */
 .volume-knob {
   position: absolute;
-  bottom: 4px;
+  bottom: 0;  /* start at full volume (bottom is 0 volume, so invert logic in JS) */
   left: 50%;
+  transform: translateX(-50%);
   width: 12px;
   height: 8px;
   background: #fff;
   border-radius: 2px;
   cursor: ns-resize;
-  transform: translateX(-50%);
+  box-shadow: 0 0 3px rgba(0,0,0,0.6);
+  user-select: none;
+  touch-action: none;
+  transition: background-color 0.2s ease;
+}
+
+.volume-knob:hover,
+.volume-knob:focus {
+  background-color: #7b5deb;
+  outline: none;
+}
+
+.volume-knob:active {
+  cursor: grabbing;
+  background-color: #6139c6;
 }
