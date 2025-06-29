@@ -83,23 +83,57 @@ function showVideoThumbnail(file) {
   // Clear previous content
   previewThumbnail.innerHTML = '';
 
-  // Create video element for thumbnail preview
+  // Create a hidden video element to extract the first frame
   const vid = document.createElement('video');
   vid.src = URL.createObjectURL(file);
   vid.muted = true;
   vid.playsInline = true;
-  vid.autoplay = true;
-  vid.loop = true;
+  vid.autoplay = false;  // don't autoplay here
   vid.controls = false;
+  vid.style.display = 'none'; // hide it
 
-  previewThumbnail.appendChild(vid);
-  previewThumbnail.style.display = 'block';
+  // Append hidden video to the DOM so it can load metadata and seek
+  document.body.appendChild(vid);
 
-  // Optionally, clicking thumbnail could play/pause the main video or open file picker
-  previewThumbnail.onclick = () => {
-    videoPreview.src = vid.src;
-    videoPreview.load();
-  };
+  vid.addEventListener('loadedmetadata', () => {
+    // Set video currentTime to 0 to get first frame
+    vid.currentTime = 0;
+  });
+
+  vid.addEventListener('seeked', () => {
+    // Create canvas and draw first frame
+    const canvas = document.createElement('canvas');
+    canvas.width = vid.videoWidth;
+    canvas.height = vid.videoHeight;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(vid, 0, 0, canvas.width, canvas.height);
+
+    // Create image from canvas
+    const img = document.createElement('img');
+    img.src = canvas.toDataURL();
+    img.alt = 'Video thumbnail';
+
+    // Clear previewThumbnail and add the image
+    previewThumbnail.innerHTML = '';
+    previewThumbnail.appendChild(img);
+    previewThumbnail.style.display = 'block';
+
+    // Clean up hidden video element
+    document.body.removeChild(vid);
+
+    // Clicking thumbnail loads video into main preview
+    previewThumbnail.onclick = () => {
+      videoPreview.src = vid.src;
+      videoPreview.load();
+    };
+  });
+
+  // In case the video fails to load or seek, remove hidden video after some timeout
+  setTimeout(() => {
+    if (document.body.contains(vid)) {
+      document.body.removeChild(vid);
+    }
+  }, 5000);
 }
 
 function handleFiles(files) {
@@ -223,9 +257,6 @@ previewResolution.addEventListener('change', ()=>{
     videoPreview.removeAttribute('width'); videoPreview.removeAttribute('height');
   }
 });
-
-volumeSlider.addEventListener('input', ()=>videoPreview.volume=volumeSlider.value);
-videoPreview.volume = volumeSlider.value;
 
 //
 // === WHEN VIDEO LOADS, BUILD TIMELINE ===
