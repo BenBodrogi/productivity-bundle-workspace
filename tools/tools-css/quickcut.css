@@ -21,11 +21,11 @@ body, html {
 
 /* Horizontal split top/bottom */
 .top-container {
-  flex: 1 1 50%;
+  flex: 1 1 auto;
   display: flex;
   border-bottom: 1px solid #2a2a2a;
   min-height: 0;
-  height: calc(100vh - 120px); /* height minus smaller timeline */
+  overflow: hidden;
 }
 
 /* Sidebar = top-left */
@@ -206,15 +206,16 @@ body, html {
 }
 
 .timeline-container {
-  flex: 0 1 30%; /* flexible height, max 30% of viewport */
-  min-height: 150px; /* minimum timeline height */
-  max-height: 350px; /* optional max */
+  flex: 0 0 300px; /* fixed 300px height or adjust as you want */
   overflow-x: auto;
   overflow-y: hidden;
   width: 100%;
   background-color: #222;
   padding: 10px 0;
   box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
 }
 
 .timeline-multi-tracks {

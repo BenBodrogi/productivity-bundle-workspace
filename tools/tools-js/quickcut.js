@@ -49,13 +49,39 @@ let clipsData = [];
 
 const previewThumbnail = document.getElementById('previewThumbnail');
 
-function showVideoThumbnail(blobUrl) {
-  previewThumbnail.innerHTML = ''; // clear previous
+function showThumbnail(imageSrc) {
+  previewThumbnail.innerHTML = ''; // Clear old image
   const img = document.createElement('img');
-  img.src = blobUrl;
-  img.alt = 'Video thumbnail preview';
+  img.src = imageSrc;
   previewThumbnail.appendChild(img);
 }
+
+const video = document.getElementById('videoPreview');
+
+video.addEventListener('loadeddata', () => {
+  generateThumbnail(video, 1); // Capture at 1 second
+});
+
+function generateThumbnail(video, timeInSeconds) {
+  const canvas = document.createElement('canvas');
+  const context = canvas.getContext('2d');
+
+  video.currentTime = timeInSeconds;
+
+  video.addEventListener('seeked', function onSeeked() {
+    // Remove the listener after it fires once
+    video.removeEventListener('seeked', onSeeked);
+
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const imageDataUrl = canvas.toDataURL('image/jpeg');
+
+    showThumbnail(imageDataUrl);
+  }, { once: true });
+}
+
 
 //
 // === SIMPLE HELPERS ===

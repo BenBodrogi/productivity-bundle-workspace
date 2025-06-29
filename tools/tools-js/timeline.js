@@ -39,8 +39,8 @@ export function initTimeline({
       clip.dataset.end = data.endTime;
 
     clip.style.position = 'absolute';
-    clip.style.left = `${timeToPixels(startTime)}px`;
-    clip.style.width = `${timeToPixels(endTime) - timeToPixels(startTime)}px`;
+    clip.style.left = `${timeToPixels(data.startTime)}px`;
+    clip.style.width = `${timeToPixels(data.endTime) - timeToPixels(data.startTime)}px`;
     clip.style.top = '8px';
     clip.style.height = '44px';
 
