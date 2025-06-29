@@ -369,7 +369,10 @@ forwardBtn.addEventListener('click', () => {
   videoPreview.currentTime = Math.min(videoPreview.duration, videoPreview.currentTime + 5);
 });
 
-// Initial state
+// Sync volume slider and video volume
+volumeSlider.addEventListener('input', () => {
+  videoPreview.volume = volumeSlider.value;
+});
+videoPreview.volume = volumeSlider.value;
 
-updateAudioState();
 updateTimelineUI();
