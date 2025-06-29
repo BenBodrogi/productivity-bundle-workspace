@@ -78,9 +78,6 @@ export function initTimeline({
 
     timelineTrack.appendChild(clip);
 
-    // Inputs for this clip (start, end) could be dynamic or you provide your own UI externally
-    // For now, we’ll keep times in clipData and sync with position/width
-
     clips.push({
       clip,
       handleLeft,
@@ -114,7 +111,7 @@ export function initTimeline({
     const knobPos = clipHeight * (1 - clamp(data.volume, 0, 1));
     clipObj.volumeKnob.style.top = `${knobPos}px`;
 
-    // Optionally style clip opacity based on volume for visual feedback
+    // Style clip opacity based on volume for feedback
     clip.style.opacity = 0.5 + 0.5 * data.volume;
   }
 
@@ -127,7 +124,6 @@ export function initTimeline({
     let startTime = clamp(pixelsToTime(leftPx), 0, videoElement.duration);
     let endTime = clamp(pixelsToTime(leftPx + widthPx), 0, videoElement.duration);
 
-    // Avoid invalid ranges
     if (endTime <= startTime) endTime = startTime + 0.1;
 
     data.startTime = startTime;
@@ -197,7 +193,7 @@ export function initTimeline({
   // Global mousemove and mouseup handlers
   document.addEventListener('mousemove', e => {
     clips.forEach(clipObj => {
-      const { clip, handleLeft, handleRight, volumeKnob } = clipObj;
+      const { clip, volumeKnob } = clipObj;
 
       if (clipObj.isDraggingClip) {
         const deltaX = e.clientX - clipObj.dragStartX;
@@ -256,7 +252,7 @@ export function initTimeline({
   // Initial update of clips UI
   clips.forEach(updateClipUI);
 
-  // Return an API for external control if needed
+  // Return API for external control
   return {
     clipsData,
     updateClipUI,

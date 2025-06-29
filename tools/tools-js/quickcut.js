@@ -3,6 +3,7 @@ import { initTimeline } from './timeline.js';
 
 const videoInput = document.getElementById('videoInput');
 const videoPreview = document.getElementById('videoPreview');
+const multiTracks = document.querySelector('.timeline-multi-tracks');
 
 const startTimeInput = document.getElementById('startTime');
 const endTimeInput = document.getElementById('endTime');
@@ -20,7 +21,7 @@ const qualitySelect = document.getElementById('qualitySelect');
 const playPauseBtn = document.getElementById('playPauseBtn');
 const rewindBtn = document.getElementById('rewindBtn');
 const forwardBtn = document.getElementById('forwardBtn');
-// Removed global volumeSlider (optional)
+
 const currentTimeDisplay = document.getElementById('currentTime');
 const totalDurationDisplay = document.getElementById('totalDuration');
 const previewResolution = document.getElementById('previewResolution');
@@ -31,6 +32,50 @@ const timelineTrack = document.querySelector('.timeline-track');
 const exportModal = document.getElementById('exportModal');
 const closeExportModalBtn = document.getElementById('closeExportModalBtn');
 const confirmExportBtn = document.getElementById('confirmExportBtn');
+
+const MIN_ZOOM = 0.5;
+const MAX_ZOOM = 3;
+let zoomFactor = 1;
+
+// Store the base width (full timeline width at zoom 1)
+const BASE_WIDTH = multiTracks.clientWidth || 1000; 
+multiTracks.style.width = `${BASE_WIDTH}px`;
+
+multiTracks.addEventListener('wheel', e => {
+  e.preventDefault();
+
+  const delta = Math.sign(e.deltaY);
+  zoomFactor -= delta * 0.1; // zoom sensitivity
+  zoomFactor = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, zoomFactor));
+
+  // Update timeline width
+  multiTracks.style.width = `${BASE_WIDTH * zoomFactor}px`;
+
+  // Update clips positions and widths scaled by zoom
+  updateAllClipsPositionsAndSizes(zoomFactor);
+});
+
+function updateAllClipsPositionsAndSizes(zoom) {
+  const duration = videoPreview.duration || 1;
+  const tracks = multiTracks.querySelectorAll('.track');
+
+  tracks.forEach(track => {
+    const clips = track.querySelectorAll('.clip');
+    clips.forEach(clip => {
+      // Expect data-start and data-end attributes (in seconds)
+      const start = parseFloat(clip.dataset.start);
+      const end = parseFloat(clip.dataset.end);
+      if (isNaN(start) || isNaN(end)) return;
+
+      const baseLeftPx = (start / duration) * BASE_WIDTH;
+      const baseWidthPx = ((end - start) / duration) * BASE_WIDTH;
+
+      clip.style.left = `${baseLeftPx * zoom}px`;
+      clip.style.width = `${baseWidthPx * zoom}px`;
+    });
+  });
+}
+
 
 let videoFile;
 let isDraggingVideoProgress = false;

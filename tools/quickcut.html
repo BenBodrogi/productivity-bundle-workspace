@@ -54,7 +54,6 @@
     </div>
 
     <div class="timeline-container">
-      <!-- In your timeline container, update the clip markup -->
       <div id="timeline" class="timeline-track">
         <div class="timeline-multi-tracks">
           <div id="videoTrack" class="track video-track timeline-track"></div>
@@ -66,12 +65,16 @@
         <!-- JS will add audio volume sliders here -->
       </div>
 
-          <!-- Video preview snippet (or thumbnail) -->
-          <div class="clip-video"></div>
+      <!--
+        If you want to show video preview snippet or thumbnails,
+        these should be inside the respective track or managed dynamically,
+        so consider removing or moving this element:-->
 
-          <!-- AUDIO CONTROLLER PER TRACK (Below each track container) -->
-        </div>
-      </div>
+        <div class="clip-video"></div>
+      
+
+      <!-- Audio controllers should be inside each track or inside audioTracksContainer -->
+    </div>
 
   <!-- Export Settings Modal -->
   <div id="exportModal" class="modal hidden">
