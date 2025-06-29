@@ -38,9 +38,11 @@ export function initTimeline({
       clip.dataset.start = data.startTime;
       clip.dataset.end = data.endTime;
 
-      clip.style.left = `${timeToPixels(data.startTime)}px`;
-      clip.style.width = `${timeToPixels(data.endTime) - timeToPixels(data.startTime)}px`;
-      clip.style.opacity = 0.5 + 0.5 * data.volume;
+    clip.style.position = 'absolute';
+    clip.style.left = `${timeToPixels(startTime)}px`;
+    clip.style.width = `${timeToPixels(endTime) - timeToPixels(startTime)}px`;
+    clip.style.top = '8px';
+    clip.style.height = '44px';
 
       const hl = document.createElement('div'); hl.className = 'handle-left';
       const hr = document.createElement('div'); hr.className = 'handle-right';

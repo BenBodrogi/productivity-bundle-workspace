@@ -47,6 +47,16 @@ let isDraggingVideoProgress = false;
 //
 let clipsData = [];
 
+const previewThumbnail = document.getElementById('previewThumbnail');
+
+function showVideoThumbnail(blobUrl) {
+  previewThumbnail.innerHTML = ''; // clear previous
+  const img = document.createElement('img');
+  img.src = blobUrl;
+  img.alt = 'Video thumbnail preview';
+  previewThumbnail.appendChild(img);
+}
+
 //
 // === SIMPLE HELPERS ===
 //

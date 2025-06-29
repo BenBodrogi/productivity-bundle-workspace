@@ -15,8 +15,8 @@ body, html {
 .editor-wrapper {
   display: flex;
   flex-direction: column;
-  height: 100%;
-  width: 100%;
+  height: 100vh;
+  width: 100vw;
 }
 
 /* Horizontal split top/bottom */
@@ -205,36 +205,37 @@ body, html {
   user-select: none;
 }
 
-/* timeline container (bottom half) */
 .timeline-container {
-  flex: 0 0 300px; /* fixed smaller height */
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  overflow: hidden;
-  max-width: 1000px;
+  flex: 0 1 30%; /* flexible height, max 30% of viewport */
+  min-height: 150px; /* minimum timeline height */
+  max-height: 350px; /* optional max */
+  overflow-x: auto;
+  overflow-y: hidden;
   width: 100%;
-  margin: 0 auto;
-  padding: 10px 0; /* less padding */
+  background-color: #222;
+  padding: 10px 0;
   box-sizing: border-box;
 }
 
 .timeline-multi-tracks {
+  height: 100%;
+  overflow-x: auto;
+  overflow-y: auto; /* vertical scroll if too tall */
+  padding: 8px;
   display: flex;
   flex-direction: column;
-  gap: 8px;  /* space between tracks */
-  padding: 8px;
+  gap: 8px;
   background: #222;
   border: 1px solid #444;
-  height: 120px; /* or however tall you want */
-  overflow-x: auto;
 }
 
 .track {
-  position: relative;
+  flex: 1 1 auto;
+  min-height: 50px;
+  max-height: 70px; /* optional */
   background-color: #333;
   border-radius: 4px;
-  height: 50px; /* fixed height for each track */
+  position: relative;
   overflow: visible;
   user-select: none;
   cursor: default;
