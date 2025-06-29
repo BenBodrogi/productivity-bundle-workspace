@@ -491,8 +491,8 @@ select:focus {
   pointer-events: none; /* disables all mouse interaction */
   user-select: none;
   opacity: 0.9; /* optional: makes it feel “passive” */
-  width: 80px;
-  height: 45px;
+  width: 160px;
+  height: 90px;
   margin-top: 15px;
 }
 

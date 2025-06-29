@@ -49,11 +49,29 @@ let clipsData = [];
 
 const previewThumbnail = document.getElementById('previewThumbnail');
 
-function showThumbnail(imageSrc) {
-  previewThumbnail.innerHTML = ''; // Clear old image
-  const img = document.createElement('img');
-  img.src = imageSrc;
-  previewThumbnail.appendChild(img);
+function showThumbnail(videoElement) {
+  const previewContainer = document.getElementById('previewThumbnail');
+  previewContainer.innerHTML = ''; // Clear any previous thumbnail
+
+  const canvas = document.createElement('canvas');
+  canvas.width = 160;
+  canvas.height = 90;
+  const ctx = canvas.getContext('2d');
+
+  // Seek to start before capturing
+  const originalTime = videoElement.currentTime;
+  videoElement.currentTime = 0;
+
+  videoElement.addEventListener('seeked', function onSeeked() {
+    videoElement.removeEventListener('seeked', onSeeked);
+    ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+    const img = document.createElement('img');
+    img.src = canvas.toDataURL('image/png');
+    previewContainer.appendChild(img);
+
+    // Optionally restore original time
+    videoElement.currentTime = originalTime;
+  });
 }
 
 const video = document.getElementById('videoPreview');
@@ -123,6 +141,7 @@ function handleFiles(files) {
       // Reset clip data on new video import
       videoClipsData = [];
       audioClipsData = [];
+      let tlInstance = null;
 
       videoPreview.onloadedmetadata = () => {
         const dur = videoPreview.duration;
@@ -245,10 +264,22 @@ videoPreview.addEventListener('loadedmetadata', () => {
   currentTimeDisplay.textContent = '0:00';
   videoProgress.max = videoPreview.duration;
   videoProgress.value = 0;
-  if (clipsData.length === 0) {
-    clipsData = [{ startTime: 0, endTime: videoPreview.duration, volume: 1 }];
-  }
+
+  // Initialize video and audio clips from start
+  videoClipsData = [{
+    startTime: 0,
+    endTime: videoPreview.duration,
+    volume: 1
+  }];
+
+  audioClipsData = [{
+    startTime: 0,
+    endTime: videoPreview.duration,
+    volume: 1
+  }];
+
   rebuildTimeline();
+  showThumbnail(videoPreview); // Make sure this function exists
 });
 
 //
