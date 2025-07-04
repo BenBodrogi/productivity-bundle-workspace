@@ -6,24 +6,17 @@
   }
 })();
 
-// User email from localStorage or fallback
 const userEmail = localStorage.getItem('bundleUserEmail') || 'guest@example.com';
 
-// Your logs array and active timer state
-let timeLogs = [];
-let activeTimer = null;
-
-// ==== Firebase & Firestore Setup ====
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
   getFirestore,
   doc,
   getDoc,
-  setDoc,
-  Timestamp
+  setDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-// Firebase config
+// Firebase config and initialization
 const firebaseConfig = {
   apiKey: "AIzaSyCL1TaCMcWz6nLsfQ0awCy8UEP2naSUoJ0",
   authDomain: "userinput-f3cab.firebaseapp.com",
@@ -33,13 +26,20 @@ const firebaseConfig = {
   appId: "1:1077529028817:web:e2cbf11a8c4c0d5fb7fdf0"
 };
 
-// Initialize Firebase app & Firestore
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// === Firestore Helpers ===
+let timeLogs = [];
+let activeTimer = null;
 
-// Ensures the timetracker document exists for the user
+// DOM elements
+const startBtn = document.getElementById('startBtn');
+const stopBtn = document.getElementById('stopBtn');
+const projectInput = document.getElementById('projectInput');
+const descriptionInput = document.getElementById('descriptionInput');
+const logsContainer = document.getElementById('logs');
+
+// Ensure Firestore document exists or create it
 async function ensureTimeTrackerDoc() {
   if (!userEmail) return;
 
@@ -58,13 +58,7 @@ async function ensureTimeTrackerDoc() {
   renderTimeLogs();
 }
 
-// Loads time logs (calls ensure if needed)
-async function loadTimeLogs() {
-  if (!userEmail) return;
-  await ensureTimeTrackerDoc();
-}
-
-// Saves current logs array to Firestore
+// Save logs to Firestore
 async function saveTimeLogs() {
   if (!userEmail) return;
 
@@ -76,45 +70,110 @@ async function saveTimeLogs() {
   }
 }
 
-// === Timer Control ===
-
-// Start a new timer session
-function startTimer(project, description) {
-  if (activeTimer) {
-    alert("Timer already running!");
+// Render logs to UI
+function renderTimeLogs() {
+  logsContainer.innerHTML = '';
+  if (!timeLogs.length) {
+    logsContainer.textContent = 'No time logs yet.';
     return;
   }
-  activeTimer = {
-    project,
-    description,
-    startTime: new Date().toISOString(),
-    endTime: null,
-    duration: null
-  };
-  console.log("Timer started:", activeTimer);
-  // Optionally update UI here
+
+  timeLogs.forEach(log => {
+    const div = document.createElement('div');
+    div.className = 'log-entry';
+
+    const start = new Date(log.startTime);
+    const end = log.endTime ? new Date(log.endTime) : null;
+
+    const durationMs = log.duration || (end ? end - start : 0);
+    const durationStr = durationMs ? formatDuration(durationMs) : 'Running';
+
+    div.innerHTML = `
+      <strong>${escapeHtml(log.project)}</strong><br />
+      ${log.description ? `<em>${escapeHtml(log.description)}</em><br />` : ''}
+      ${start.toLocaleString()} - ${end ? end.toLocaleString() : '...'}<br />
+      Duration: ${durationStr}
+    `;
+
+    logsContainer.appendChild(div);
+  });
 }
 
-// Stop the current timer session
-function stopTimer() {
-  if (!activeTimer) {
-    alert("No active timer to stop!");
+// Utility: format milliseconds to h m s
+function formatDuration(ms) {
+  const totalSeconds = Math.floor(ms / 1000);
+  const h = Math.floor(totalSeconds / 3600);
+  const m = Math.floor((totalSeconds % 3600) / 60);
+  const s = totalSeconds % 60;
+
+  return [
+    h ? h + 'h' : null,
+    m ? m + 'm' : null,
+    s ? s + 's' : null,
+  ].filter(Boolean).join(' ');
+}
+
+// Escape HTML to prevent injection (good practice)
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+// Start timer handler
+function startTimer() {
+  if (activeTimer) {
+    alert('Timer is already running.');
     return;
   }
-  activeTimer.endTime = new Date().toISOString();
-  activeTimer.duration = new Date(activeTimer.endTime) - new Date(activeTimer.startTime);
-  timeLogs.push(activeTimer);
-  activeTimer = null;
-  saveTimeLogs();
-  console.log("Timer stopped and saved");
+  if (!projectInput.value.trim()) {
+    alert('Please enter a project name.');
+    return;
+  }
+
+  activeTimer = {
+    project: projectInput.value.trim(),
+    description: descriptionInput.value.trim(),
+    startTime: new Date().toISOString(),
+    endTime: null,
+    duration: null,
+  };
+
+  // Disable inputs and start button, enable stop button
+  projectInput.disabled = true;
+  descriptionInput.disabled = true;
+  startBtn.disabled = true;
+  stopBtn.disabled = false;
+
   renderTimeLogs();
 }
 
-// Placeholder render function to show logs - you’ll build this next
-function renderTimeLogs() {
-  console.log("Rendering logs:", timeLogs);
-  // TODO: Build UI rendering here
+// Stop timer handler
+function stopTimer() {
+  if (!activeTimer) {
+    alert('No active timer to stop!');
+    return;
+  }
+
+  activeTimer.endTime = new Date().toISOString();
+  activeTimer.duration = new Date(activeTimer.endTime) - new Date(activeTimer.startTime);
+
+  timeLogs.push(activeTimer);
+  activeTimer = null;
+
+  // Re-enable inputs and buttons accordingly
+  projectInput.disabled = false;
+  descriptionInput.disabled = false;
+  startBtn.disabled = false;
+  stopBtn.disabled = true;
+
+  saveTimeLogs();
+  renderTimeLogs();
 }
 
-// Initialize on load
-loadTimeLogs();
+// Event listeners
+startBtn.addEventListener('click', startTimer);
+stopBtn.addEventListener('click', stopTimer);
+
+// Initial load
+ensureTimeTrackerDoc();

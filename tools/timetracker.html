@@ -4,27 +4,44 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Project Time Tracker</title>
-<link rel="stylesheet" href="timetracker.css" />
+<link rel="stylesheet" href="tools-css/timetracker.css" />
 </head>
 <body>
   <section>
     <h2>Project Time Tracker</h2>
+
     <form id="trackerForm" onsubmit="return false;">
-      <input type="text" id="projectInput" placeholder="Project name" required />
+      <label for="projectSelect" class="visually-hidden">Select Project</label>
+      <select id="projectSelect" required>
+        <option value="" disabled selected>Select a project</option>
+      </select>
+
+      <input
+        type="text"
+        id="newProjectInput"
+        placeholder="Add new project and press Enter"
+        autocomplete="off"
+      />
+
       <textarea id="descriptionInput" placeholder="Description (optional)"></textarea>
+
       <div class="button-row">
-        <button id="startBtn" type="button">Start Timer</button>
-        <button id="stopBtn" type="button" disabled>Stop Timer</button>
+        <button id="toggleTimerBtn" type="button" disabled>
+          ▶ Start Timer
+        </button>
+        <div id="elapsedTime">00:00:00</div>
       </div>
     </form>
 
     <div id="logs">
-      <!-- Logs will appear here -->
+      <!-- Logs with edit/delete appear here -->
     </div>
+
+    <button id="clearLogsBtn" type="button" class="clear-btn" disabled>
+      Clear All Logs
+    </button>
   </section>
 
-  <script>
-    // (Your JavaScript goes here, same as before)
-  </script>
+  <script src="tools-js/timetracker.js" type="module"></script>
 </body>
 </html>
