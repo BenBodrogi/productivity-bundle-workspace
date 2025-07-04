@@ -1,62 +1,78 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Project Time Tracker</title>
-<link rel="stylesheet" href="tools-css/timetracker.css" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Project Time Tracker</title>
+  <link rel="stylesheet" href="tools-css/timetracker.css" />
 </head>
 <body>
+  <section class="tracker-container">
 
-  <div class="sidebar">
-    <h2>My SaaS</h2>
-    <nav>
+    <nav class="tracker-sidebar">
+      <h2>Time Tracker</h2>
       <ul>
-        <li><a href="todo.html">To-Do List</a></li>
-        <li><a href="timetracker.html" class="active">Time Tracker</a></li>
-        <li><a href="#">Projects</a></li>
-        <li><a href="#">Reports</a></li>
-        <li><a href="#">Settings</a></li>
+        <li><a href="#" class="active" data-section="timer">Timer</a></li>
+        <li><a href="#" data-section="projects">Projects</a></li>
+        <li><a href="#" data-section="reports">Reports</a></li>
+        <li><a href="#" data-section="settings">Settings</a></li>
       </ul>
     </nav>
-  </div>
 
-  <div class="main-content">
-    <section>
-      <h2>Project Time Tracker</h2>
+    <main class="tracker-main">
+      <div id="timerSection" class="tracker-section active">
+        <!-- Timer UI goes here -->
+        <form id="trackerForm" onsubmit="return false;">
+          <select id="projectSelect" required>
+            <option value="" disabled selected>Select a project</option>
+          </select>
 
-      <form id="trackerForm" onsubmit="return false;">
-        <label for="projectSelect" class="visually-hidden">Select Project</label>
-        <select id="projectSelect" required>
-          <option value="" disabled selected>Select a project</option>
-        </select>
+          <input
+            type="text"
+            id="newProjectInput"
+            placeholder="Add new project and press Enter"
+            autocomplete="off"
+          />
 
-        <input
-          type="text"
-          id="newProjectInput"
-          placeholder="Add new project and press Enter"
-          autocomplete="off"
-        />
+          <textarea id="descriptionInput" placeholder="Description (optional)"></textarea>
 
-        <textarea id="descriptionInput" placeholder="Description (optional)"></textarea>
+          <div class="button-row">
+            <button id="toggleTimerBtn" type="button" disabled>
+              ▶ Start Timer
+            </button>
+            <div id="elapsedTime">00:00:00</div>
+          </div>
+        </form>
 
-        <div class="button-row">
-          <button id="toggleTimerBtn" type="button" disabled>
-            ▶ Start Timer
-          </button>
-          <div id="elapsedTime">00:00:00</div>
+        <div id="logs">
+          <!-- Time logs will appear here -->
         </div>
-      </form>
 
-      <div id="logs">
-        <!-- Logs with edit/delete appear here -->
+        <button id="clearLogsBtn" type="button" class="clear-btn" disabled>
+          Clear All Logs
+        </button>
       </div>
 
-      <button id="clearLogsBtn" type="button" class="clear-btn" disabled>
-        Clear All Logs
-      </button>
-    </section>
-  </div>
+      <div id="projectsSection" class="tracker-section">
+        <!-- Projects UI placeholder -->
+        <h3>Projects</h3>
+        <p>Manage your projects here.</p>
+      </div>
+
+      <div id="reportsSection" class="tracker-section">
+        <!-- Reports UI placeholder -->
+        <h3>Reports</h3>
+        <p>Reports will be available soon.</p>
+      </div>
+
+      <div id="settingsSection" class="tracker-section">
+        <!-- Settings UI placeholder -->
+        <h3>Settings</h3>
+        <p>Settings will be available soon.</p>
+      </div>
+    </main>
+
+  </section>
 
   <script src="tools-js/timetracker.js" type="module"></script>
 </body>
