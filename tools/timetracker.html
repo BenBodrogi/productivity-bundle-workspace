@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" >
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -12,15 +12,43 @@
     <nav class="tracker-sidebar">
       <h2>Time Tracker</h2>
       <ul>
-        <li><a href="#" class="active" data-section="timer">Timer</a></li>
+        <li><a href="#" class="active" data-section="home">Home</a></li>
+        <li><a href="#" data-section="timer">Timer</a></li>
         <li><a href="#" data-section="projects">Projects</a></li>
+        <li><a href="#" data-section="logs">Logs</a></li>
         <li><a href="#" data-section="reports">Reports</a></li>
         <li><a href="#" data-section="settings">Settings</a></li>
       </ul>
     </nav>
 
     <main class="tracker-main">
-      <div id="timerSection" class="tracker-section active">
+      <!-- HOME -->
+      <div id="homeSection" class="tracker-section active">
+        <h3>Welcome Back!</h3>
+        <div class="dashboard-stats">
+          <div class="stat-box">
+            <div class="stat-number" id="todayTotal">0h 0m</div>
+            <div class="stat-label">Time Tracked Today</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-number" id="weekTotal">0h 0m</div>
+            <div class="stat-label">Time Tracked This Week</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-number" id="activeProjectsCount">0</div>
+            <div class="stat-label">Active Projects</div>
+          </div>
+        </div>
+
+        <div class="quick-actions">
+          <button id="startNewTimerBtn">▶ Start New Timer</button>
+          <button id="goToProjectsBtn">📁 Manage Projects</button>
+          <button id="viewReportsBtn">📊 View Reports</button>
+        </div>
+      </div>
+
+      <!-- TIMER -->
+      <div id="timerSection" class="tracker-section">
         <!-- Timer UI goes here -->
         <form id="trackerForm" onsubmit="return false;">
           <select id="projectSelect" required>
@@ -40,6 +68,9 @@
             <button id="toggleTimerBtn" type="button" disabled>
               ▶ Start Timer
             </button>
+            <button id="pauseTimerBtn" type="button" disabled style="display:none;">
+              ❚❚ Pause
+            </button>
             <div id="elapsedTime">00:00:00</div>
           </div>
         </form>
@@ -53,20 +84,26 @@
         </button>
       </div>
 
+      <!-- PROJECTS -->
       <div id="projectsSection" class="tracker-section">
-        <!-- Projects UI placeholder -->
         <h3>Projects</h3>
         <p>Manage your projects here.</p>
       </div>
 
+      <!-- LOGS -->
+      <div id="logsSection" class="tracker-section">
+        <h3>Logs</h3>
+        <p>Detailed time logs will appear here.</p>
+      </div>
+
+      <!-- REPORTS -->
       <div id="reportsSection" class="tracker-section">
-        <!-- Reports UI placeholder -->
         <h3>Reports</h3>
         <p>Reports will be available soon.</p>
       </div>
 
+      <!-- SETTINGS -->
       <div id="settingsSection" class="tracker-section">
-        <!-- Settings UI placeholder -->
         <h3>Settings</h3>
         <p>Settings will be available soon.</p>
       </div>

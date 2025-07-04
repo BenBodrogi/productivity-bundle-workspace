@@ -18,8 +18,8 @@ body {
 
 .tracker-container {
   display: flex;
-  width: 700px;
-  height: 600px;
+  width: 900px;
+  height: 700px;
   border-radius: 10px;
   box-shadow: 0 6px 14px rgba(123, 93, 235, 0.1);
   background: #fff;
@@ -89,6 +89,60 @@ body {
   display: block;
 }
 
+/* Home page styles */
+.dashboard-stats {
+  display: flex;
+  gap: 30px;
+  margin-bottom: 30px;
+  justify-content: center;
+}
+
+.stat-box {
+  background: #ede9ff;
+  padding: 20px 30px;
+  border-radius: 10px;
+  width: 130px;
+  text-align: center;
+  box-shadow: 0 3px 8px rgba(123, 93, 235, 0.15);
+}
+
+.stat-number {
+  font-size: 28px;
+  font-weight: 700;
+  color: #5a3cb5;
+  margin-bottom: 6px;
+  user-select: none;
+}
+
+.stat-label {
+  font-size: 14px;
+  color: #6b639f;
+}
+
+.quick-actions {
+  display: flex;
+  justify-content: center;
+  gap: 18px;
+}
+
+.quick-actions button {
+  background-color: #7b5deb;
+  border: none;
+  color: white;
+  font-weight: 600;
+  font-size: 16px;
+  padding: 14px 24px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.25s ease;
+  user-select: none;
+  box-shadow: 0 4px 10px rgba(123, 93, 235, 0.3);
+}
+
+.quick-actions button:hover {
+  background-color: #5a3cb5;
+}
+
 /* Timer Section styles */
 form {
   display: flex;
@@ -152,9 +206,9 @@ button:hover:not(:disabled),
 
 #elapsedTime {
   font-family: 'Courier New', Courier, monospace;
-  font-size: 18px;
+  font-size: 24px;
   color: #4b3ca7;
-  min-width: 100px;
+  min-width: 120px;
   text-align: center;
   user-select: none;
 }
