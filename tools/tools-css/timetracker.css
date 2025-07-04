@@ -1,0 +1,81 @@
+/* timetracker.css */
+
+/* Override background for this tool */
+body {
+  background-color: #f0f4ff;
+}
+
+section {
+  background: #ffffff;
+  box-shadow: 0 6px 14px rgba(123, 93, 235, 0.1);
+}
+
+h2 {
+  color: #4b3ca7;
+  font-weight: 700;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+form {
+  flex-direction: column;
+  gap: 12px;
+}
+
+input[type="text"], textarea {
+  padding: 12px 14px;
+  font-size: 15px;
+  border: 1.5px solid #7b5deb;
+  border-radius: 6px;
+  font-family: inherit;
+  resize: vertical;
+}
+
+textarea {
+  min-height: 60px;
+}
+
+.button-row {
+  display: flex;
+  gap: 14px;
+}
+
+button {
+  flex: 1;
+  background-color: #7b5deb;
+  color: white;
+  font-weight: 600;
+  transition: background-color 0.25s ease;
+}
+
+button:hover {
+  background-color: #5a3cb5;
+}
+
+/* Logs container */
+#logs {
+  margin-top: 20px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.log-entry {
+  background-color: #ede9ff;
+  border-radius: 6px;
+  padding: 10px 15px;
+  margin-bottom: 10px;
+  font-size: 14px;
+  color: #3a3170;
+  box-shadow: 0 1px 3px rgba(123, 93, 235, 0.1);
+}
+
+.log-entry strong {
+  color: #5a3cb5;
+}
+
+/* Responsive tweaks */
+@media (max-width: 450px) {
+  section {
+    max-width: 90vw;
+    padding: 15px 20px;
+  }
+}

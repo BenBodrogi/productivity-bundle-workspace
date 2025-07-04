@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Project Time Tracker</title>
+<link rel="stylesheet" href="timetracker.css" />
+</head>
+<body>
+  <section>
+    <h2>Project Time Tracker</h2>
+    <form id="trackerForm" onsubmit="return false;">
+      <input type="text" id="projectInput" placeholder="Project name" required />
+      <textarea id="descriptionInput" placeholder="Description (optional)"></textarea>
+      <div class="button-row">
+        <button id="startBtn" type="button">Start Timer</button>
+        <button id="stopBtn" type="button" disabled>Stop Timer</button>
+      </div>
+    </form>
+
+    <div id="logs">
+      <!-- Logs will appear here -->
+    </div>
+  </section>
+
+  <script>
+    // (Your JavaScript goes here, same as before)
+  </script>
+</body>
+</html>
