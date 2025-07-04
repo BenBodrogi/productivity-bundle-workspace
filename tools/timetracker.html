@@ -7,40 +7,56 @@
 <link rel="stylesheet" href="tools-css/timetracker.css" />
 </head>
 <body>
-  <section>
-    <h2>Project Time Tracker</h2>
 
-    <form id="trackerForm" onsubmit="return false;">
-      <label for="projectSelect" class="visually-hidden">Select Project</label>
-      <select id="projectSelect" required>
-        <option value="" disabled selected>Select a project</option>
-      </select>
+  <div class="sidebar">
+    <h2>My SaaS</h2>
+    <nav>
+      <ul>
+        <li><a href="todo.html">To-Do List</a></li>
+        <li><a href="timetracker.html" class="active">Time Tracker</a></li>
+        <li><a href="#">Projects</a></li>
+        <li><a href="#">Reports</a></li>
+        <li><a href="#">Settings</a></li>
+      </ul>
+    </nav>
+  </div>
 
-      <input
-        type="text"
-        id="newProjectInput"
-        placeholder="Add new project and press Enter"
-        autocomplete="off"
-      />
+  <div class="main-content">
+    <section>
+      <h2>Project Time Tracker</h2>
 
-      <textarea id="descriptionInput" placeholder="Description (optional)"></textarea>
+      <form id="trackerForm" onsubmit="return false;">
+        <label for="projectSelect" class="visually-hidden">Select Project</label>
+        <select id="projectSelect" required>
+          <option value="" disabled selected>Select a project</option>
+        </select>
 
-      <div class="button-row">
-        <button id="toggleTimerBtn" type="button" disabled>
-          ▶ Start Timer
-        </button>
-        <div id="elapsedTime">00:00:00</div>
+        <input
+          type="text"
+          id="newProjectInput"
+          placeholder="Add new project and press Enter"
+          autocomplete="off"
+        />
+
+        <textarea id="descriptionInput" placeholder="Description (optional)"></textarea>
+
+        <div class="button-row">
+          <button id="toggleTimerBtn" type="button" disabled>
+            ▶ Start Timer
+          </button>
+          <div id="elapsedTime">00:00:00</div>
+        </div>
+      </form>
+
+      <div id="logs">
+        <!-- Logs with edit/delete appear here -->
       </div>
-    </form>
 
-    <div id="logs">
-      <!-- Logs with edit/delete appear here -->
-    </div>
-
-    <button id="clearLogsBtn" type="button" class="clear-btn" disabled>
-      Clear All Logs
-    </button>
-  </section>
+      <button id="clearLogsBtn" type="button" class="clear-btn" disabled>
+        Clear All Logs
+      </button>
+    </section>
+  </div>
 
   <script src="tools-js/timetracker.js" type="module"></script>
 </body>

@@ -1,13 +1,75 @@
-/* timetracker.css */
+/* tools-css/timetracker.css */
+
+html, body {
+  margin: 0;
+  height: 100%;
+  font-family: Arial, sans-serif;
+  background-color: #f0f4ff;
+}
 
 body {
-  background-color: #f0f4ff;
+  display: flex;
+  height: 100vh; /* Full viewport height */
+  overflow: hidden;
+}
+
+.sidebar {
+  width: 220px;
+  background-color: #7b5deb;
+  color: white;
+  padding: 30px 20px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.sidebar h2 {
+  margin-top: 0;
+  margin-bottom: 30px;
+  font-weight: 700;
+  font-size: 22px;
+}
+
+.sidebar nav ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.sidebar nav ul li {
+  margin-bottom: 20px;
+}
+
+.sidebar nav ul li a {
+  color: white;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 16px;
+  display: block;
+  padding: 8px 12px;
+  border-radius: 6px;
+  transition: background-color 0.25s ease;
+}
+
+.sidebar nav ul li a:hover,
+.sidebar nav ul li a.active {
+  background-color: rgba(255 255 255 / 0.3);
+}
+
+.main-content {
+  flex-grow: 1;
+  overflow-y: auto;
+  padding: 30px;
+  box-sizing: border-box;
 }
 
 section {
   background: #ffffff;
   box-shadow: 0 6px 14px rgba(123, 93, 235, 0.1);
-  max-width: 420px;
+  max-width: 600px;
+  margin: 0 auto;
   padding: 24px 30px;
   border-radius: 10px;
 }
@@ -170,7 +232,7 @@ button:hover:not(:disabled),
 }
 
 /* Responsive */
-@media (max-width: 480px) {
+@media (max-width: 640px) {
   section {
     max-width: 90vw;
     padding: 20px;

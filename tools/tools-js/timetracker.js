@@ -29,151 +29,273 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
+// DOM elements
+const projectSelect = document.getElementById('projectSelect');
+const newProjectInput = document.getElementById('newProjectInput');
+const descriptionInput = document.getElementById('descriptionInput');
+const toggleTimerBtn = document.getElementById('toggleTimerBtn');
+const elapsedTimeDisplay = document.getElementById('elapsedTime');
+const logsContainer = document.getElementById('logs');
+const clearLogsBtn = document.getElementById('clearLogsBtn');
+
+let projects = [];
 let timeLogs = [];
 let activeTimer = null;
+let timerInterval = null;
 
-// DOM elements
-const startBtn = document.getElementById('startBtn');
-const stopBtn = document.getElementById('stopBtn');
-const projectInput = document.getElementById('projectInput');
-const descriptionInput = document.getElementById('descriptionInput');
-const logsContainer = document.getElementById('logs');
-
-// Ensure Firestore document exists or create it
-async function ensureTimeTrackerDoc() {
+// Load Firestore doc for this user (timetracker)
+async function loadData() {
   if (!userEmail) return;
 
   const docRef = doc(db, 'timetracker', userEmail);
   const docSnap = await getDoc(docRef);
 
   if (!docSnap.exists()) {
-    await setDoc(docRef, { logs: [] });
+    // Create default doc
+    await setDoc(docRef, { projects: [], logs: [] });
+    projects = [];
     timeLogs = [];
-    console.log("Created new timetracker doc for", userEmail);
   } else {
-    timeLogs = docSnap.data().logs || [];
-    console.log("Loaded timetracker doc for", userEmail);
+    const data = docSnap.data();
+    projects = data.projects || [];
+    timeLogs = data.logs || [];
   }
-
+  renderProjects();
   renderTimeLogs();
+  updateToggleButtonState();
+  updateClearLogsButton();
 }
 
-// Save logs to Firestore
-async function saveTimeLogs() {
+// Save Firestore data
+async function saveData() {
   if (!userEmail) return;
-
   try {
     const docRef = doc(db, 'timetracker', userEmail);
-    await setDoc(docRef, { logs: timeLogs });
-  } catch (error) {
-    console.error("Failed to save time logs:", error);
+    await setDoc(docRef, { projects, logs: timeLogs });
+  } catch (e) {
+    console.error('Error saving data:', e);
   }
 }
 
-// Render logs to UI
-function renderTimeLogs() {
-  logsContainer.innerHTML = '';
-  if (!timeLogs.length) {
-    logsContainer.textContent = 'No time logs yet.';
-    return;
-  }
-
-  timeLogs.forEach(log => {
-    const div = document.createElement('div');
-    div.className = 'log-entry';
-
-    const start = new Date(log.startTime);
-    const end = log.endTime ? new Date(log.endTime) : null;
-
-    const durationMs = log.duration || (end ? end - start : 0);
-    const durationStr = durationMs ? formatDuration(durationMs) : 'Running';
-
-    div.innerHTML = `
-      <strong>${escapeHtml(log.project)}</strong><br />
-      ${log.description ? `<em>${escapeHtml(log.description)}</em><br />` : ''}
-      ${start.toLocaleString()} - ${end ? end.toLocaleString() : '...'}<br />
-      Duration: ${durationStr}
-    `;
-
-    logsContainer.appendChild(div);
+// Render project dropdown options
+function renderProjects() {
+  // Clear options except the placeholder
+  projectSelect.innerHTML = '<option value="" disabled selected>Select a project</option>';
+  projects.forEach(proj => {
+    const option = document.createElement('option');
+    option.value = proj;
+    option.textContent = proj;
+    projectSelect.appendChild(option);
   });
 }
 
-// Utility: format milliseconds to h m s
-function formatDuration(ms) {
-  const totalSeconds = Math.floor(ms / 1000);
-  const h = Math.floor(totalSeconds / 3600);
-  const m = Math.floor((totalSeconds % 3600) / 60);
-  const s = totalSeconds % 60;
-
-  return [
-    h ? h + 'h' : null,
-    m ? m + 'm' : null,
-    s ? s + 's' : null,
-  ].filter(Boolean).join(' ');
-}
-
-// Escape HTML to prevent injection (good practice)
-function escapeHtml(text) {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
-}
-
-// Start timer handler
-function startTimer() {
-  if (activeTimer) {
-    alert('Timer is already running.');
-    return;
+// Add new project handler
+newProjectInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    const newProj = newProjectInput.value.trim();
+    if (newProj && !projects.includes(newProj)) {
+      projects.push(newProj);
+      saveData();
+      renderProjects();
+      projectSelect.value = newProj;
+      newProjectInput.value = '';
+      updateToggleButtonState();
+    }
   }
-  if (!projectInput.value.trim()) {
-    alert('Please enter a project name.');
+});
+
+// Enable start button only if a project is selected and no active timer
+function updateToggleButtonState() {
+  toggleTimerBtn.disabled = !projectSelect.value || !!activeTimer;
+}
+
+// Start or stop timer toggle
+toggleTimerBtn.addEventListener('click', () => {
+  if (activeTimer) {
+    stopTimer();
+  } else {
+    startTimer();
+  }
+});
+
+// Start timer function
+function startTimer() {
+  if (!projectSelect.value) {
+    alert('Please select a project.');
     return;
   }
 
   activeTimer = {
-    project: projectInput.value.trim(),
+    project: projectSelect.value,
     description: descriptionInput.value.trim(),
     startTime: new Date().toISOString(),
     endTime: null,
     duration: null,
   };
 
-  // Disable inputs and start button, enable stop button
-  projectInput.disabled = true;
+  // Disable inputs while timer running
+  projectSelect.disabled = true;
+  newProjectInput.disabled = true;
   descriptionInput.disabled = true;
-  startBtn.disabled = true;
-  stopBtn.disabled = false;
+  toggleTimerBtn.textContent = '■ Stop Timer';
+
+  // Start elapsed time display
+  updateElapsedTime();
+  timerInterval = setInterval(updateElapsedTime, 1000);
 
   renderTimeLogs();
+  updateToggleButtonState();
+  updateClearLogsButton();
 }
 
-// Stop timer handler
+// Stop timer function
 function stopTimer() {
-  if (!activeTimer) {
-    alert('No active timer to stop!');
-    return;
-  }
+  if (!activeTimer) return;
 
   activeTimer.endTime = new Date().toISOString();
   activeTimer.duration = new Date(activeTimer.endTime) - new Date(activeTimer.startTime);
-
   timeLogs.push(activeTimer);
   activeTimer = null;
 
-  // Re-enable inputs and buttons accordingly
-  projectInput.disabled = false;
-  descriptionInput.disabled = false;
-  startBtn.disabled = false;
-  stopBtn.disabled = true;
+  clearInterval(timerInterval);
+  elapsedTimeDisplay.textContent = '00:00:00';
 
-  saveTimeLogs();
+  // Re-enable inputs
+  projectSelect.disabled = false;
+  newProjectInput.disabled = false;
+  descriptionInput.disabled = false;
+  toggleTimerBtn.textContent = '▶ Start Timer';
+
+  saveData();
+  renderTimeLogs();
+  updateToggleButtonState();
+  updateClearLogsButton();
+}
+
+// Update elapsed time display
+function updateElapsedTime() {
+  if (!activeTimer) return;
+  const now = new Date();
+  const start = new Date(activeTimer.startTime);
+  const diffMs = now - start;
+  elapsedTimeDisplay.textContent = formatDuration(diffMs);
+}
+
+// Format ms to HH:MM:SS
+function formatDuration(ms) {
+  const totalSeconds = Math.floor(ms / 1000);
+  const h = Math.floor(totalSeconds / 3600);
+  const m = Math.floor((totalSeconds % 3600) / 60);
+  const s = totalSeconds % 60;
+  return [h, m, s].map(n => n.toString().padStart(2, '0')).join(':');
+}
+
+// Render logs with edit/delete buttons
+function renderTimeLogs() {
+  logsContainer.innerHTML = '';
+  if (timeLogs.length === 0) {
+    logsContainer.textContent = 'No time logs yet.';
+    return;
+  }
+
+  timeLogs.forEach((log, i) => {
+    const div = document.createElement('div');
+    div.className = 'log-entry';
+
+    const start = new Date(log.startTime);
+    const end = log.endTime ? new Date(log.endTime) : null;
+    const durationMs = log.duration || (end ? end - start : 0);
+    const durationStr = durationMs ? formatDuration(durationMs) : 'Running';
+
+    div.innerHTML = `
+      <div class="log-details">
+        <strong>${escapeHtml(log.project)}</strong>
+        ${log.description ? `<em>${escapeHtml(log.description)}</em>` : ''}
+        <div class="log-time">${start.toLocaleString()} - ${end ? end.toLocaleString() : '...'}</div>
+        <div class="log-duration">Duration: ${durationStr}</div>
+      </div>
+      <div class="log-actions">
+        <button title="Edit" data-index="${i}" class="edit-log-btn">✏️</button>
+        <button title="Delete" data-index="${i}" class="delete-log-btn">🗑️</button>
+      </div>
+    `;
+
+    logsContainer.appendChild(div);
+  });
+
+  // Attach event listeners to edit/delete buttons
+  document.querySelectorAll('.edit-log-btn').forEach(btn => {
+    btn.onclick = () => editLogEntry(Number(btn.dataset.index));
+  });
+  document.querySelectorAll('.delete-log-btn').forEach(btn => {
+    btn.onclick = () => deleteLogEntry(Number(btn.dataset.index));
+  });
+}
+
+// Escape HTML utility
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+// Edit log entry (simple prompt editing)
+function editLogEntry(index) {
+  const log = timeLogs[index];
+  if (!log) return;
+
+  const newProject = prompt('Edit Project Name:', log.project);
+  if (newProject === null) return; // Cancelled
+
+  const newDescription = prompt('Edit Description:', log.description || '');
+  if (newDescription === null) return;
+
+  if (newProject.trim() === '') {
+    alert('Project name cannot be empty.');
+    return;
+  }
+
+  log.project = newProject.trim();
+  log.description = newDescription.trim();
+
+  // Add project to list if new
+  if (!projects.includes(log.project)) {
+    projects.push(log.project);
+  }
+
+  saveData();
+  renderProjects();
   renderTimeLogs();
 }
 
-// Event listeners
-startBtn.addEventListener('click', startTimer);
-stopBtn.addEventListener('click', stopTimer);
+// Delete log entry
+function deleteLogEntry(index) {
+  if (!confirm('Are you sure you want to delete this log?')) return;
+
+  timeLogs.splice(index, 1);
+  saveData();
+  renderTimeLogs();
+  updateClearLogsButton();
+}
+
+// Clear all logs button
+clearLogsBtn.addEventListener('click', () => {
+  if (!confirm('Are you sure you want to clear all logs?')) return;
+
+  timeLogs = [];
+  saveData();
+  renderTimeLogs();
+  updateClearLogsButton();
+});
+
+// Enable/disable clear logs button
+function updateClearLogsButton() {
+  clearLogsBtn.disabled = timeLogs.length === 0;
+}
+
+// Enable/disable start button when project changes
+projectSelect.addEventListener('change', updateToggleButtonState);
 
 // Initial load
-ensureTimeTrackerDoc();
+loadData();
